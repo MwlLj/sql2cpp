@@ -28,10 +28,10 @@ class CWriteSqliteImpH(CWriteBase):
 		return "__{0}_DB_HANDLER_H__".format(self.m_namespace.upper())
 
 	def include_sys_list(self):
-		return ["stdint.h", "mutex"]
+		return ["stdint.h"]
 
 	def include_other_list(self):
-		return ["{0}_db_param.h".format(self.m_file_name)]
+		return ["{0}_db_param.h".format(self.m_file_name), "sql.h"]
 
 	def namespace(self):
 		return self.m_namespace
@@ -48,10 +48,12 @@ class CWriteSqliteImpH(CWriteBase):
 		content = ""
 		content += self.write_header()
 		content += self.write_includes()
+		"""
 		content += "namespace sql\n"
 		content += "{\n"
 		content += "class IConnect;\n"
 		content += "}\n"
+		"""
 		content += self.write_namespace_define()
 		content += self.write_class_define()
 		content += self.__write_implement(info_dict)
@@ -59,13 +61,13 @@ class CWriteSqliteImpH(CWriteBase):
 		content += self.write_namespace_end()
 		content += self.write_tail()
 		self.m_content += content
-		# print(self.m_content)
-		self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
+		print(self.m_content)
+		# self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
 
 	def __write_implement(self, info_dict):
 		content = ""
 		content += "public:\n"
-		content += "\t"*1 + "explicit {0}(const std::string &dial);\n".format(self.class_name())
+		content += "\t"*1 + "explicit {0}(const std::string &dial, sql::ISql *s, int max = 1);\n".format(self.class_name())
 		content += "\t"*1 + "virtual ~{0}();\n".format(self.class_name())
 		method_list = info_dict.get(CSqlParse.METHOD_LIST)
 		content += self.__write_methods(method_list)
@@ -85,13 +87,13 @@ class CWriteSqliteImpH(CWriteBase):
 		content = ""
 		content += "\n"
 		content += "private:\n"
-		content += "\t"*1 + "sql::IConnect *m_db;\n"
-		content += "\t"*1 + "std::mutex m_mutex;\n"
+		content += "\t"*1 + "sql::CConnPool m_connPool;\n"
+		content += "\t"*1 + "std::string m_dial;\n"
 		return content
 
 
 if __name__ == "__main__":
-	parser = CSqlParse("./file/user_info.sql")
+	parser = CSqlParse("./example_sql/user_info.sql")
 	parser.read()
 	info_dict = parser.get_info_dict()
 	writer = CWriteSqliteImpH(parser.get_file_path(), root="./obj")

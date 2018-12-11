@@ -114,9 +114,6 @@ class CWriteBase(object):
 			content += self.__write_callback(func_name, out_isarr, output_params)
 		content += "uint32_t {0}::{1}({2})\n".format(self.class_name(), func_name, self.get_method_param_list(func_name, method_info))
 		content += "{\n"
-		content += "\t"*1 + "if (m_db == nullptr) return -1;\n"
-		content += "\t"*1 + "uint32_t ret = 0;\n"
-		content += "\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
 		content += "\t"*1 + "return ret;\n"
@@ -234,11 +231,51 @@ class CWriteBase(object):
 			content += "\t"*1 + "if (ret != SQLITE_OK) return ret;\n"
 		return content
 
+	def __read_data(self, func_name, output_params, out_isarr):
+		content = ""
+		var_type = self.get_output_class_name(func_name)
+		isarr = out_isarr
+		output_params_len = len(output_params)
+		content += "\t"*2 + "std::vector<std::string> cols;\n"
+		content += "\t"*2 + "cols.resize({0});\n".format(str(output_params_len))
+		content += "\t"*2 + "bool b = row->scan(cols);\n"
+		content += "\t"*2 + "if (!b) continue;\n"
+		content += "\t"*2 + "{0} tmp;\n".format(var_type)
+		content += "\t"*2 + "std::stringstream ss;\n"
+		tmp = "result."
+		if out_isarr is True:
+			tmp = "tmp."
+		i = 0
+		for param in output_params:
+			param_type = param.get(CSqlParse.PARAM_TYPE)
+			param_name = param.get(CSqlParse.PARAM_NAME)
+			if param_type is None or param_name is None:
+				continue
+			value = "colValue[{0}]".format(i)
+			param_type = self.type_change(param_type)
+			content += "\t"*2 + "if (colValue[{0}] != nullptr) ".format(i) + "{\n"
+			if param_type != "std::string":
+				content += "\t"*3 + "{0} {1} = 0;\n".format(param_type, param_name)
+				content += "\t"*3 + "ss << colValue[{0}];\n".format(i)
+				content += "\t"*3 + "ss >> {0};\n".format(param_name)
+				content += "\t"*3 + "ss.clear();\n"
+				value = param_name
+			content += "\t"*3 + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
+			content += "\t"*2 + "}\n"
+			i += 1
+		if isarr is True:
+			# content += "\t"*1 + "}\n"
+			content += "\t"*1 + "p->push_back(tmp);\n"
+		return content
+
 	def __write_execute(self, func_name, method_info):
 		content = ""
 		in_isarr = method_info.get(CSqlParse.IN_ISARR)
 		if in_isarr is None:
 			raise SystemExit("[Keyword Error] (function {0}) in_isarr is exist".format(func_name))
+		out_isarr = method_info.get(CSqlParse.OUT_ISARR)
+		if out_isarr is None:
+			raise SystemExit("[Keyword Error] (function {0}) out_isarr is exist".format(func_name))
 		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 		buf_len = method_info.get(CSqlParse.BUFLEN)
@@ -255,9 +292,11 @@ class CWriteBase(object):
 		n = 1
 		if in_isarr == "true":
 			n = 2
-		content += "\t"*1 + 'm_mutex.lock();\n'
 		if input_params is not None:
-			content += "\t"*1 + 'sqlite3_exec(m_db, "begin transaction;", nullptr, nullptr, nullptr);\n'
+			content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
+			content += "\t"*1 + 'if (conn == nullptr) return -1;\n'
+			content += "\t"*1 + 'sql::ITransaction *trans = conn->begin();\n'
+			content += "\t"*1 + 'if (trans == nullptr) return -1;\n'
 			content += "\t"*1 + 'std::string sql("");\n'
 			if in_isarr == "true":
 				content += "\t"*1 + "for (auto iter = input.begin(); iter != input.end(); ++iter)\n"
@@ -282,15 +321,21 @@ class CWriteBase(object):
 		else:
 			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
 		if output_params is None:
-			content += "\t"*n + 'ret = sqlite3_exec(m_db, sql.c_str(), nullptr, nullptr, nullptr);\n'
+			content += "\t"*n + 'conn->query(sql);\n'
 		else:
-			callback_name = func_name + "Callback"
-			content += "\t"*n + 'ret = sqlite3_exec(m_db, sql.c_str(), {0}, &output, nullptr);\n'.format(callback_name)
+			content += "\t"*n + 'sql::IRow *row = conn->query(sql);\n'
+			var_type = self.get_output_class_name(func_name)
+			if out_isarr is True:
+				content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
+			else:
+				content += "\t"*n + "{0} result;\n".format(var_type)
+			content += "\t"*n + 'while (row->next()) {\n'
+			content += self.__read_data(func_name, output_params, out_isarr) + '\n'
+			content += "\t"*n + '}\n'
 		if in_isarr == "true":
 			content += "\t"*1 + "}\n"
 		if input_params is not None:
-			content += "\t"*1 + 'sqlite3_exec(m_db, "commit;", nullptr, nullptr, nullptr);\n'
-		content += "\t"*1 + 'm_mutex.unlock();\n'
+			content += "\t"*1 + 'trans->commit();\n'
 		if in_isarr == "true":
 			content += "\t"*1 + "if (ret != SQLITE_OK) return ret;\n"
 		return content

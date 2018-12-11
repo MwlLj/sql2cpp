@@ -31,7 +31,7 @@ class CWriteSqliteImpCpp(CWriteBase):
 		return ["stdio.h", "string.h", "sstream"]
 
 	def include_other_list(self):
-		return ["sql.h", self.m_file_name + "_db_handler.h"]
+		return [self.m_file_name + "_db_handler.h"]
 
 	def namespace(self):
 		return self.m_namespace
@@ -55,35 +55,27 @@ class CWriteSqliteImpCpp(CWriteBase):
 		content += self.write_namespace_end()
 		# content += self.write_tail()
 		self.m_content += content
-		# print(self.m_content)
-		self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
+		print(self.m_content)
+		# self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
 
 	def __write_implement(self, info_dict):
 		create_tables_sql = info_dict.get(CSqlParse.CREATE_TABELS_SQL)
 		content = ""
-		content += "{0}::{0}(const std::string &dial)\n".format(self.class_name())
-		content += "\t"*1 + ": m_db(nullptr)\n"
-		content += "\t"*1 + ", m_mutex()\n"
+		content += "{0}::{0}(const std::string &dial, sql::ISql *s, int max)\n".format(self.class_name())
+		content += "\t"*1 + ": m_connPool(s, max)\n"
+		content += "\t"*1 + ', m_dial(dial)\n'
 		content += "{\n"
-		content += "\t"*1 + "sqlite3_threadsafe();\n"
-		content += "\t"*1 + "sqlite3_config(SQLITE_CONFIG_MULTITHREAD);\n"
-		content += "\t"*1 + "int ret = SQLITE_OK;\n"
-		content += "\t"*1 + "if (isMemory == false) {\n"
-		content += "\t"*2 + "ret = sqlite3_open(dbpath.c_str(), &m_db);\n"
-		content += "\t"*1 + "}\n"
-		content += "\t"*1 + "else {\n"
-		content += "\t"*2 + 'ret = sqlite3_open(":memory:", &m_db);\n'
-		content += "\t"*1 + "}\n"
+		content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
 		if create_tables_sql is not None:
-			content += "\t"*1 + "if (ret == SQLITE_OK) {\n"
+			content += "\t"*1 + "if (conn != nullptr) {\n"
 			content += "\t"*2 + 'std::string sql = "\\\n{0}";\n'.format(create_tables_sql)
-			content += "\t"*2 + "sqlite3_exec(m_db, sql.c_str(), nullptr, nullptr, nullptr);\n"
+			content += "\t"*2 + "conn->query(sql);\n"
+			content += "\t"*2 + "m_connPool.freeConnect(conn);\n"
 			content += "\t"*1 + "}\n"
 		content += "}\n"
 		content += "\n"
 		content += "{0}::~{0}()\n".format(self.class_name())
 		content += "{\n"
-		content += "\t"*1 + "sqlite3_close(m_db);\n"
 		content += "}\n"
 		method_list = info_dict.get(CSqlParse.METHOD_LIST)
 		content += self.__write_methods(method_list)
