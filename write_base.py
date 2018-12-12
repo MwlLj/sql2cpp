@@ -259,7 +259,7 @@ class CWriteBase(object):
 		else:
 			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
 		if output_params is None:
-			content += "\t"*n + 'conn->query(sql);\n'
+			content += "\t"*n + 'conn->exec(sql);\n'
 		else:
 			content += "\t"*n + 'sql::IRow *row = conn->query(sql);\n'
 			content += "\t"*n + 'if (row == nullptr) return -1;\n'

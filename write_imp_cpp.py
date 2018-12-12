@@ -69,7 +69,7 @@ class CWriteSqliteImpCpp(CWriteBase):
 		if create_tables_sql is not None:
 			content += "\t"*1 + "if (conn != nullptr) {\n"
 			content += "\t"*2 + 'std::string sql = "\\\n{0}";\n'.format(create_tables_sql)
-			content += "\t"*2 + "conn->query(sql);\n"
+			content += "\t"*2 + "conn->exec(sql);\n"
 			content += "\t"*2 + "m_connPool.freeConnect(conn);\n"
 			content += "\t"*1 + "}\n"
 		content += "}\n"
