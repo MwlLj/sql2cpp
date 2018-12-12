@@ -262,6 +262,7 @@ class CWriteBase(object):
 			content += "\t"*n + 'conn->query(sql);\n'
 		else:
 			content += "\t"*n + 'sql::IRow *row = conn->query(sql);\n'
+			content += "\t"*n + 'if (row == nullptr) return -1;\n'
 			var_type = self.get_output_class_name(func_name)
 			# if out_isarr == "true":
 			# 	content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
@@ -275,10 +276,12 @@ class CWriteBase(object):
 				isarr = True
 			content += self.__read_data(func_name, output_params, isarr)
 			content += "\t"*n + '}\n'
+			content += "\t"*n + 'row->close();\n'
 		if in_isarr == "true":
 			content += "\t"*1 + "}\n"
 		if input_params is not None:
 			content += "\t"*1 + 'trans->commit();\n'
+		content += "\t"*1 + 'm_connPool.freeConnect(conn);\n'
 		return content
 
 	def __write_group(self, func_name, method_info, in_isarr, is_brace, input_params, sql, n):

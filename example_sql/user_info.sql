@@ -38,6 +38,18 @@ insert into user_info values(null, ?, ?);
 #end
 
 /*
+	@bref 插入多条记录
+	@is_brace true
+	@in_isarr true
+	@out_isarr false
+	@in userName: string
+	@in userAge: int
+*/
+#define addMultiUserInfo
+insert into user_info values(null, {0}, {1});
+#end
+
+/*
 	@bref 通过用户ID获取用户信息
 	@in_isarr false
 	@out_isarr false
