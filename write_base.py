@@ -261,8 +261,10 @@ class CWriteBase(object):
 		if output_params is None:
 			content += "\t"*n + 'conn->exec(sql);\n'
 		else:
-			content += "\t"*n + 'sql::IRow *row = conn->query(sql);\n'
-			content += "\t"*n + 'if (row == nullptr) return -1;\n'
+			content += "\t"*n + 'bool exeRet = false;\n'
+			content += "\t"*n + 'sql::IRow *row = conn->query(sql, exeRet);\n'
+			content += "\t"*n + 'if (exeRet == false) return -1;\n'
+			content += "\t"*n + 'if (exeRet == true && row == nullptr) return 0;\n'
 			var_type = self.get_output_class_name(func_name)
 			# if out_isarr == "true":
 			# 	content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
