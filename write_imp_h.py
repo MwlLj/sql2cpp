@@ -61,8 +61,8 @@ class CWriteSqliteImpH(CWriteBase):
 		content += self.write_namespace_end()
 		content += self.write_tail()
 		self.m_content += content
-		print(self.m_content)
-		# self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
+		# print(self.m_content)
+		self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
 
 	def __write_implement(self, info_dict):
 		content = ""

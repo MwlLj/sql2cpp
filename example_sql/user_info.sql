@@ -33,7 +33,7 @@ create table if not exists user_info(
 	@in username: string
 	@in userage: int
 */
-#define add_userinfo
+#define addUserinfo
 insert into user_info values(null, ?, ?);
 #end
 
@@ -46,7 +46,7 @@ insert into user_info values(null, ?, ?);
 	@out username: string
 	@out userage: int
 */
-#define get_userinfo_by_id
+#define getUserinfoById
 select * from user_info
 where id = ?;
 #end
@@ -59,7 +59,7 @@ where id = ?;
 	@out username: string
 	@out userage: int
 */
-#define get_all_userinfo
+#define getAllUserinfo
 select * from user_info;
 #end
 
@@ -69,7 +69,7 @@ select * from user_info;
 	@out_isarr false
 	@in id: int
 */
-#define delete_user
+#define deleteUser
 delete from user_info where id = ?;
 #end
 
@@ -80,7 +80,7 @@ delete from user_info where id = ?;
 	@in username: string
 	@in id: int
 */
-#define update_username
+#define updateUsername
 update user_info set username = ? where id = ?;
 #end
 
@@ -92,7 +92,7 @@ update user_info set username = ? where id = ?;
 	@in id: int
 	@in username: string
 */
-#define update_username_2
+#define updateUsername2
 update user_info set username = {1} where id = {0};
 #end
 
@@ -105,7 +105,7 @@ update user_info set username = {1} where id = {0};
 	@gin id: int
 	@in username: string
 */
-#define update_username_3
+#define updateUsername3
 update user_info set username = {1} where /*begin{0}*/id = {0}/*end*/;
 #end
 
@@ -117,6 +117,6 @@ update user_info set username = {1} where /*begin{0}*/id = {0}/*end*/;
 	@in id[cond]: string
 	@in username: string
 */
-#define update_username_4
+#define updateUsername4
 update user_info set username = {1} {0};
 #end

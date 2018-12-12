@@ -109,9 +109,9 @@ class CWriteBase(object):
 		content = ""
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
-		if output_params is not None:
-			out_isarr = method_info.get(CSqlParse.OUT_ISARR)
-			content += self.__write_callback(func_name, out_isarr, output_params)
+		# if output_params is not None:
+		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
+		# 	content += self.__write_callback(func_name, out_isarr, output_params)
 		content += "uint32_t {0}::{1}({2})\n".format(self.class_name(), func_name, self.get_method_param_list(func_name, method_info))
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
@@ -170,80 +170,19 @@ class CWriteBase(object):
 		content += "}\n"
 		return content
 
-	def __write_execute2(self, func_name, method_info):
-		content = ""
-		in_isarr = method_info.get(CSqlParse.IN_ISARR)
-		if in_isarr is None:
-			raise SystemExit("[Keyword Error] (function {0}) in_isarr is exist".format(func_name))
-		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
-		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
-		buf_len = method_info.get(CSqlParse.BUFLEN)
-		if buf_len is None:
-			buf_len = "512"
-		is_brace = method_info.get(CSqlParse.IS_BRACE)
-		if is_brace is None:
-			is_brace = False
-		is_group = method_info.get(CSqlParse.IS_GROUP)
-		sql = method_info.get(CSqlParse.SQL)
-		if sql is None:
-			sql = ""
-		sql = re.sub(r"\n", "\n\t\t", sql)
-		n = 1
-		if in_isarr == "true":
-			n = 2
-		if input_params is not None:
-			content += "\t"*1 + 'std::string sql("");\n'
-			if in_isarr == "true":
-				content += "\t"*1 + "for (auto iter = input.begin(); iter != input.end(); ++iter)\n"
-				content += "\t"*1 + "{\n"
-			content += "\t"*n + "char buf[{0}];\n".format(buf_len)
-			content += "\t"*n + "memset(buf, 0, sizeof(buf));\n"
-			if is_group is None or is_group is False:
-				if is_brace is False:
-					content += "\t"*n + 'snprintf(buf, sizeof(buf), "{0}"\n'.format(self.__replace_sql_by_input_params(input_params, sql, False))
-					content += "\t"*(n+1) + ", "
-					content += self.__get_input_posture(in_isarr, input_params)
-					content += ");\n"
-				else:
-					sql, fulls = self.__replace_sql_brace(input_params, sql, False)
-					content += "\t"*n + 'snprintf(buf, sizeof(buf), "{0}"\n'.format(sql)
-					content += "\t"*(n+1) + ", "
-					content += self.__get_input_brace_posture(in_isarr, input_params, fulls)
-					content += ");\n"
-			else:
-				content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, n)
-			if in_isarr == "true":
-				content += "\t"*n + "sql += buf;\n"
-			else:
-				content += "\t"*n + "sql = buf;\n"
-		else:
-			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
-		if in_isarr == "true":
-			content += "\t"*1 + "}\n"
-		content += "\t"*1 + 'm_mutex.lock();\n'
-		if output_params is None:
-			content += "\t"*1 + 'ret = sqlite3_exec(m_db, sql.c_str(), nullptr, nullptr, nullptr);\n'
-		else:
-			callback_name = func_name + "Callback"
-			content += "\t"*1 + 'ret = sqlite3_exec(m_db, sql.c_str(), {0}, &output, nullptr);\n'.format(callback_name)
-		content += "\t"*1 + 'm_mutex.unlock();\n'
-		if in_isarr == "true":
-			content += "\t"*1 + "if (ret != SQLITE_OK) return ret;\n"
-		return content
-
-	def __read_data(self, func_name, output_params, out_isarr):
+	def __read_data(self, func_name, output_params, isarr):
 		content = ""
 		var_type = self.get_output_class_name(func_name)
-		isarr = out_isarr
 		output_params_len = len(output_params)
 		content += "\t"*2 + "std::vector<std::string> cols;\n"
 		content += "\t"*2 + "cols.resize({0});\n".format(str(output_params_len))
 		content += "\t"*2 + "bool b = row->scan(cols);\n"
 		content += "\t"*2 + "if (!b) continue;\n"
-		content += "\t"*2 + "{0} tmp;\n".format(var_type)
+		if isarr is True:
+			content += "\t"*2 + "{0} tmp;\n".format(var_type)
 		content += "\t"*2 + "std::stringstream ss;\n"
-		tmp = "result."
-		if out_isarr is True:
+		tmp = "output."
+		if isarr is True:
 			tmp = "tmp."
 		i = 0
 		for param in output_params:
@@ -251,21 +190,19 @@ class CWriteBase(object):
 			param_name = param.get(CSqlParse.PARAM_NAME)
 			if param_type is None or param_name is None:
 				continue
-			value = "colValue[{0}]".format(i)
+			value = "cols[{0}]".format(i)
 			param_type = self.type_change(param_type)
-			content += "\t"*2 + "if (colValue[{0}] != nullptr) ".format(i) + "{\n"
 			if param_type != "std::string":
-				content += "\t"*3 + "{0} {1} = 0;\n".format(param_type, param_name)
-				content += "\t"*3 + "ss << colValue[{0}];\n".format(i)
-				content += "\t"*3 + "ss >> {0};\n".format(param_name)
-				content += "\t"*3 + "ss.clear();\n"
+				content += "\t"*2 + "{0} {1} = 0;\n".format(param_type, param_name)
+				content += "\t"*2 + "ss << cols[{0}];\n".format(i)
+				content += "\t"*2 + "ss >> {0};\n".format(param_name)
+				content += "\t"*2 + "ss.clear();\n"
 				value = param_name
-			content += "\t"*3 + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
-			content += "\t"*2 + "}\n"
+			content += "\t"*2 + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
 			i += 1
 		if isarr is True:
 			# content += "\t"*1 + "}\n"
-			content += "\t"*1 + "p->push_back(tmp);\n"
+			content += "\t"*2 + "output.push_back(tmp);\n"
 		return content
 
 	def __write_execute(self, func_name, method_info):
@@ -292,9 +229,10 @@ class CWriteBase(object):
 		n = 1
 		if in_isarr == "true":
 			n = 2
+		content += "\t"*1 + 'uint32_t ret = 0;\n\n'
+		content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
+		content += "\t"*1 + 'if (conn == nullptr) return -1;\n'
 		if input_params is not None:
-			content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
-			content += "\t"*1 + 'if (conn == nullptr) return -1;\n'
 			content += "\t"*1 + 'sql::ITransaction *trans = conn->begin();\n'
 			content += "\t"*1 + 'if (trans == nullptr) return -1;\n'
 			content += "\t"*1 + 'std::string sql("");\n'
@@ -325,19 +263,22 @@ class CWriteBase(object):
 		else:
 			content += "\t"*n + 'sql::IRow *row = conn->query(sql);\n'
 			var_type = self.get_output_class_name(func_name)
-			if out_isarr is True:
-				content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
-			else:
-				content += "\t"*n + "{0} result;\n".format(var_type)
+			# if out_isarr == "true":
+			# 	content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
+			# else:
+			# 	content += "\t"*n + "{0} result;\n".format(var_type)
+			if out_isarr == "true":
+				content += "\t"*n + "output.clear();\n"
 			content += "\t"*n + 'while (row->next()) {\n'
-			content += self.__read_data(func_name, output_params, out_isarr) + '\n'
+			isarr = False
+			if out_isarr == "true":
+				isarr = True
+			content += self.__read_data(func_name, output_params, isarr)
 			content += "\t"*n + '}\n'
 		if in_isarr == "true":
 			content += "\t"*1 + "}\n"
 		if input_params is not None:
 			content += "\t"*1 + 'trans->commit();\n'
-		if in_isarr == "true":
-			content += "\t"*1 + "if (ret != SQLITE_OK) return ret;\n"
 		return content
 
 	def __write_group(self, func_name, method_info, in_isarr, is_brace, input_params, sql, n):

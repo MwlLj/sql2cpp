@@ -55,8 +55,8 @@ class CWriteSqliteImpCpp(CWriteBase):
 		content += self.write_namespace_end()
 		# content += self.write_tail()
 		self.m_content += content
-		print(self.m_content)
-		# self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
+		# print(self.m_content)
+		self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
 
 	def __write_implement(self, info_dict):
 		create_tables_sql = info_dict.get(CSqlParse.CREATE_TABELS_SQL)
