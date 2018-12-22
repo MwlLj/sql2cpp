@@ -22,21 +22,33 @@ class CWriteBase(object):
 	def class_name(self):
 		return ""
 
-	def get_input_class_name(self, func_name):
+	def get_input_class_name(self, func_name, method_info):
+		in_class = method_info.get(CSqlParse.IN_CLASS)
+		name = ""
+		if in_class is not None:
+			name = in_class
+		else:
+			name = func_name
 		# hump_func_name = CStringTools.underling2HumpLarger(func_name)
-		hump_func_name = CStringTools.upperFirstByte(func_name)
+		hump_func_name = CStringTools.upperFirstByte(name)
 		input_name = "C{0}Input".format(hump_func_name)
 		return input_name
 
-	def get_output_class_name(self, func_name):
+	def get_output_class_name(self, func_name, method_info):
+		out_class = method_info.get(CSqlParse.OUT_CLASS)
+		name = ""
+		if out_class is not None:
+			name = out_class
+		else:
+			name = func_name
 		# hump_func_name = CStringTools.underling2HumpLarger(func_name)
-		hump_func_name = CStringTools.upperFirstByte(func_name)
+		hump_func_name = CStringTools.upperFirstByte(name)
 		output_name = "C{0}Output".format(hump_func_name)
 		return output_name
 
 	def get_method_param_list(self, func_name, method_info):
-		input_name = self.get_input_class_name(func_name)
-		output_name = self.get_output_class_name(func_name)
+		input_name = self.get_input_class_name(func_name, method_info)
+		output_name = self.get_output_class_name(func_name, method_info)
 		method_param_list = ""
 		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
@@ -157,7 +169,7 @@ class CWriteBase(object):
 				content += "\t"*(tmp_len+1) + "{0} {1} = 0;\n".format(param_type, param_name)
 				content += "\t"*(tmp_len+1) + "ss << colValue[{0}];\n".format(i)
 				content += "\t"*(tmp_len+1) + "ss >> {0};\n".format(param_name)
-				content += "\t"*(tmp_len+1) + "ss.clear();\n"
+				content += "\t"*(tmp_len+1) + 'ss.str("");\n'
 				value = param_name
 			content += "\t"*(tmp_len+1) + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
 			content += "\t"*tmp_len + "}\n"
@@ -170,9 +182,9 @@ class CWriteBase(object):
 		content += "}\n"
 		return content
 
-	def __read_data(self, func_name, output_params, isarr):
+	def __read_data(self, func_name, output_params, isarr, method_info):
 		content = ""
-		var_type = self.get_output_class_name(func_name)
+		var_type = self.get_output_class_name(func_name, method_info)
 		output_params_len = len(output_params)
 		content += "\t"*2 + "std::vector<std::string> cols;\n"
 		content += "\t"*2 + "cols.resize({0});\n".format(str(output_params_len))
@@ -196,7 +208,7 @@ class CWriteBase(object):
 				content += "\t"*2 + "{0} {1} = 0;\n".format(param_type, param_name)
 				content += "\t"*2 + "ss << cols[{0}];\n".format(i)
 				content += "\t"*2 + "ss >> {0};\n".format(param_name)
-				content += "\t"*2 + "ss.clear();\n"
+				content += "\t"*2 + 'ss.str("");\n'
 				value = param_name
 			content += "\t"*2 + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
 			i += 1
@@ -239,23 +251,29 @@ class CWriteBase(object):
 			if in_isarr == "true":
 				content += "\t"*1 + "for (auto iter = input.begin(); iter != input.end(); ++iter)\n"
 				content += "\t"*1 + "{\n"
-			content += "\t"*n + "char buf[{0}];\n".format(buf_len)
-			content += "\t"*n + "memset(buf, 0, sizeof(buf));\n"
+			content += "\t"*n + "std::stringstream ss;\n"
 			if is_group is None or is_group is False:
 				if is_brace is False:
+					content += "\t"*n + self.__replace_sql_by_input_params(input_params, in_isarr, sql, False)
+					"""
 					content += "\t"*n + 'snprintf(buf, sizeof(buf), "{0}"\n'.format(self.__replace_sql_by_input_params(input_params, sql, False))
 					content += "\t"*(n+1) + ", "
 					content += self.__get_input_posture(in_isarr, input_params)
 					content += ");\n"
+					"""
 				else:
-					sql, fulls = self.__replace_sql_brace(input_params, sql, False)
+					sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, False)
+					content += '\t'*n + 'ss << "' + sql
+					"""
+					sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, False)
 					content += "\t"*n + 'snprintf(buf, sizeof(buf), "{0}"\n'.format(sql)
 					content += "\t"*(n+1) + ", "
 					content += self.__get_input_brace_posture(in_isarr, input_params, fulls)
 					content += ");\n"
+					"""
 			else:
 				content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, n)
-			content += "\t"*n + 'sql = buf;\n'
+			content += "\t"*n + 'sql = ss.str();\n'
 		else:
 			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
 		if output_params is None:
@@ -265,7 +283,7 @@ class CWriteBase(object):
 			content += "\t"*n + 'sql::IRow *row = conn->query(sql, exeRet);\n'
 			content += "\t"*n + 'if (exeRet == false) return -1;\n'
 			content += "\t"*n + 'if (exeRet == true && row == nullptr) return 0;\n'
-			var_type = self.get_output_class_name(func_name)
+			var_type = self.get_output_class_name(func_name, method_info)
 			# if out_isarr == "true":
 			# 	content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
 			# else:
@@ -276,7 +294,7 @@ class CWriteBase(object):
 			isarr = False
 			if out_isarr == "true":
 				isarr = True
-			content += self.__read_data(func_name, output_params, isarr)
+			content += self.__read_data(func_name, output_params, isarr, method_info)
 			content += "\t"*n + '}\n'
 			content += "\t"*n + 'row->close();\n'
 		if in_isarr == "true":
@@ -340,20 +358,27 @@ class CWriteBase(object):
 
 			tmp = ""
 			if is_brace is True:
-				sql_tmp, fulls = self.__replace_sql_brace(input_params, sql_tmp, True)
+				sql_tmp, fulls = self.__replace_sql_brace(input_params, in_isarr, sql_tmp, True)
+				tmp += '\t'*(n+1) + 'ss << "' + sql_tmp
+				"""
+				sql_tmp, fulls = self.__replace_sql_brace(input_params, in_isarr, sql_tmp, True)
 				tmp += "\t"*(n+1) + 'snprintf(buf, sizeof(buf), "{0}"'.format(sql_tmp)
 				if len(fulls) > 0:
 					tmp += "\n" + "\t"*(n+2) + ", "
 				tmp += self.__get_input_brace_posture(in_isarr, input_params, fulls)
 				tmp += ");"
+				"""
 			else:
+				tmp += "\t"*(n+1) + self.__replace_sql_by_input_params(input_params, in_isarr, sql_tmp, True)
+				"""
 				tmp += "\t"*(n+1) + 'snprintf(buf, sizeof(buf), "{0}"'.format(self.__replace_sql_by_input_params(input_params, sql_tmp, True))
 				if len(fulls) > 0:
 					tmp += "\n" + "\t"*(n+2) + ", "
 				tmp += self.__get_input_posture(in_isarr, input_params)
 				tmp += ");"
+				"""
 
-			content += ") {\n" + "{0}\n".format(tmp) + "\t"*n + "}"
+			content += ") {\n" + "{0}".format(tmp) + "\t"*n + "}"
 		content += "\n"
 		return content
 
@@ -367,6 +392,18 @@ class CWriteBase(object):
 				li.append(item)
 			i += 1
 		return "".join(li)
+
+	def __get_input_posture_single(self, in_isarr, input_param):
+		content = ""
+		preix = "input."
+		if in_isarr == "true":
+			preix = "iter->"
+		param_name = input_param.get(CSqlParse.PARAM_NAME)
+		param_type = input_param.get(CSqlParse.PARAM_TYPE)
+		content += "{0}get{1}()".format(preix, CStringTools.upperFirstByte(param_name))
+		if param_type == "string":
+			content += ".c_str()"
+		return content
 
 	def __get_input_posture(self, in_isarr, input_params):
 		content = ""
@@ -393,7 +430,7 @@ class CWriteBase(object):
 		preix = "input."
 		if in_isarr == "true":
 			preix = "iter->"
-		for number, keyword in fulls:
+		for number, keyword, last_is_other, next_is_other in fulls:
 			i += 1
 			param = input_params[number]
 			param_name = param.get(CSqlParse.PARAM_NAME)
@@ -405,8 +442,8 @@ class CWriteBase(object):
 				content += ", "
 		return content
 
-	def __replace_sql_brace(self, input_params, sql, is_group):
-		fulls, max_number = CStringTools.get_brace_format_list(sql)
+	def __replace_sql_brace(self, input_params, in_isarr, sql, is_group):
+		fulls, max_number = CStringTools.get_brace_format_list2(sql)
 		param_len = len(input_params)
 		full_set = set(fulls)
 		full_len = len(full_set)
@@ -417,20 +454,29 @@ class CWriteBase(object):
 			if param_len < max_number + 1:
 				str_tmp = "[Param Match Error] may be last #define error ? input param length == {1}, max index == {2}\n[sql] : \t{0}".format(sql, param_len, max_number)
 				raise SystemExit(str_tmp)
-		for number, keyword in list(full_set):
+		for number, keyword, last_is_other, next_is_other in list(full_set):
 			inpams = input_params[number]
 			tmp = ""
-			param_type = inpams.get(CSqlParse.PARAM_TYPE)
+			if last_is_other is True:
+				tmp += '"'
 			if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
-				tmp += '\\"'
-			tmp += self.type2symbol(param_type)
+				tmp += ' << "\\"" << '
+			else:
+				tmp += " << "
+			value = self.__get_input_posture_single(in_isarr, inpams)
+			tmp += value
 			if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
-				tmp += '\\"'
+				tmp += ' << "\\"" << '
+			else:
+				tmp += " << "
+			if next_is_other is True:
+				tmp += '"'
 			sql = re.sub(keyword, tmp, sql)
+		sql += '";\n'
 		return sql, fulls
 
-	def __replace_sql_by_input_params(self, input_params, sql, is_group):
-		content = ""
+	def __replace_sql_by_input_params(self, input_params, in_isarr, sql, is_group):
+		content = 'ss << "'
 		param_len = len(input_params)
 		symbol_len = len(re.findall(r"\?", sql))
 		if is_group is False:
@@ -438,20 +484,34 @@ class CWriteBase(object):
 				str_tmp = "[Param Length Error] may be last #define error ? symbol length({1}) != params length({2})\n[sql] : \t{0}".format(sql, symbol_len, param_len)
 				raise SystemExit(str_tmp)
 		i = 0
+		last_isnot_symbol = True
+		last_is_symbol = False
 		for ch in sql:
 			if ch == "?":
+				if last_isnot_symbol is True:
+					content += '"'
+					last_isnot_symbol = False
 				inpams = input_params[i]
-				param_type = inpams.get(CSqlParse.PARAM_TYPE)
-				symbol = self.type2symbol(param_type)
+				value = self.__get_input_posture_single(in_isarr, inpams)
 				if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
-					content += '\\"'
-				content += symbol
+					content += ' << "\\"" << '
+				else:
+					content += " << "
+				content += '{0}'.format(value)
 				if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
-					content += '\\"'
+					content += ' << "\\"" << '
+				else:
+					content += " << "
 				i += 1
+				last_is_symbol = True
 			else:
+				if last_is_symbol is True:
+					content += '"'
+					last_is_symbol = False
 				content += ch
+				last_isnot_symbol = True
 		# find {0} {1} ...
+		content += '";\n'
 		return content
 
 	def write_construction_param_list(self, param_list):

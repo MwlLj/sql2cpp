@@ -70,18 +70,18 @@ class CWriteParamClass(CWriteBase):
 			input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 			output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 			if input_params is not None:
-				content += self.__write_class(func_name, input_params, True)
+				content += self.__write_class(func_name, input_params, True, method_info)
 			if output_params is not None:
-				content += self.__write_class(func_name, output_params, False)
+				content += self.__write_class(func_name, output_params, False, method_info)
 		return content
 
-	def __write_class(self, func_name, param_list, is_input):
+	def __write_class(self, func_name, param_list, is_input, method_info):
 		content = ""
 		class_name = ""
 		if is_input is True:
-			class_name = self.get_input_class_name(func_name)
+			class_name = self.get_input_class_name(func_name, method_info)
 		else:
-			class_name = self.get_output_class_name(func_name)
+			class_name = self.get_output_class_name(func_name, method_info)
 		content += "class {0}\n".format(class_name)
 		content += "{\n"
 		content += "public:\n"

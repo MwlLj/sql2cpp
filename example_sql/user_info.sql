@@ -86,6 +86,38 @@ delete from user_info where id = ?;
 #end
 
 /*
+	@bref 获取用户信息通过名字
+	@is_brace true
+	@in_class getUserInfoByName
+	@out_class getUserInfoByName
+	@in_isarr false
+	@out_isarr true
+	@in userName: string
+	@out id: int
+	@out userName: string
+	@out userAge: int
+*/
+#define getUserInfo
+select * from user_info where username = {0};
+#end
+
+/*
+	@bref 获取用户信息通过年龄
+	@is_brace true
+	@in_class getUserInfoByAge
+	@out_class getUserInfoByAge
+	@in_isarr false
+	@out_isarr true
+	@in userAge: int
+	@out id: int
+	@out userName: string
+	@out userAge: int
+*/
+#define getUserInfo
+select * from user_info where userage = {0};
+#end
+
+/*
 	@bref 更新用户名
 	@in_isarr false
 	@out_isarr false

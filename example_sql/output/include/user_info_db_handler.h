@@ -2,41 +2,46 @@
 #define __USER_INFO_DB_HANDLER_H__
 
 #include <stdint.h>
-#include <mutex>
 #include "user_info_db_param.h"
+#include "sql.h"
 
-struct sqlite3;
 namespace user_info
 {
 
 class CDbHandler
 {
 public:
-	explicit CDbHandler(const std::string &dbpath, bool isMemory = false);
+	explicit CDbHandler(const std::string &dial, sql::ISql *s, int max = 1);
 	virtual ~CDbHandler();
 
 public:
 	/*@@start@@*/
 	// 插入一条记录
-	uint32_t add_userinfo(const CAdd_userinfoInput &input);
+	uint32_t addUserinfo(const CAddUserinfoInput &input);
+	// 插入多条记录
+	uint32_t addMultiUserInfo(const std::list<CAddMultiUserInfoInput> &input);
 	// 通过用户ID获取用户信息
-	uint32_t get_userinfo_by_id(const CGet_userinfo_by_idInput &input, CGet_userinfo_by_idOutput &output);
+	uint32_t getUserinfoById(const CGetUserinfoByIdInput &input, CGetUserinfoByIdOutput &output);
 	// 获取全部的人员信息
-	uint32_t get_all_userinfo(std::list<CGet_all_userinfoOutput> &output);
+	uint32_t getAllUserinfo(std::list<CGetAllUserinfoOutput> &output);
 	// 删除一个或多个用户
-	uint32_t delete_user(const std::list<CDelete_userInput> &input);
+	uint32_t deleteUser(const std::list<CDeleteUserInput> &input);
+	// 获取用户信息通过名字
+	uint32_t getUserInfo(const CGetUserInfoByNameInput &input, std::list<CGetUserInfoByNameOutput> &output);
+	// 获取用户信息通过年龄
+	uint32_t getUserInfo(const CGetUserInfoByAgeInput &input, std::list<CGetUserInfoByAgeOutput> &output);
 	// 更新用户名
-	uint32_t update_username(const CUpdate_usernameInput &input);
+	uint32_t updateUsername(const CUpdateUsernameInput &input);
 	// 更新用户名2
-	uint32_t update_username_2(const CUpdate_username_2Input &input);
+	uint32_t updateUsername2(const CUpdateUsername2Input &input);
 	// 更新用户名3
-	uint32_t update_username_3(const CUpdate_username_3Input &input);
+	uint32_t updateUsername3(const CUpdateUsername3Input &input);
 	// 更新用户名4
-	uint32_t update_username_4(const CUpdate_username_4Input &input);
+	uint32_t updateUsername4(const CUpdateUsername4Input &input);
 
 private:
-	sqlite3 *m_db;
-	std::mutex m_mutex;
+	sql::CConnPool m_connPool;
+	std::string m_dial;
 };
 
 }

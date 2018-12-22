@@ -7,14 +7,14 @@
 namespace user_info
 {
 
-class CAdd_userinfoInput
+class CAddUserinfoInput
 {
 public:
-	explicit CAdd_userinfoInput()
+	explicit CAddUserinfoInput()
 		: username(""), userage(0) {}
-	explicit CAdd_userinfoInput(const std::string &username, const int &userage)
+	explicit CAddUserinfoInput(const std::string &username, const int &userage)
 		: username(username), userage(userage) {}
-	virtual ~CAdd_userinfoInput() {}
+	virtual ~CAddUserinfoInput() {}
 
 public:
 	void setUsername(const std::string &username, bool use = true) { this->username = username; this->usernameUsed = use; }
@@ -31,14 +31,38 @@ private:
 	bool userageUsed;
 };
 
-class CGet_userinfo_by_idInput
+class CAddMultiUserInfoInput
 {
 public:
-	explicit CGet_userinfo_by_idInput()
+	explicit CAddMultiUserInfoInput()
+		: userName(""), userAge(0) {}
+	explicit CAddMultiUserInfoInput(const std::string &userName, const int &userAge)
+		: userName(userName), userAge(userAge) {}
+	virtual ~CAddMultiUserInfoInput() {}
+
+public:
+	void setUserName(const std::string &userName, bool use = true) { this->userName = userName; this->userNameUsed = use; }
+	const std::string &getUserName() const { return this->userName; }
+	const bool &getUserNameUsed() const { return this->userNameUsed; }
+	void setUserAge(const int &userAge, bool use = true) { this->userAge = userAge; this->userAgeUsed = use; }
+	const int &getUserAge() const { return this->userAge; }
+	const bool &getUserAgeUsed() const { return this->userAgeUsed; }
+
+private:
+	std::string userName;
+	bool userNameUsed;
+	int userAge;
+	bool userAgeUsed;
+};
+
+class CGetUserinfoByIdInput
+{
+public:
+	explicit CGetUserinfoByIdInput()
 		: id(0) {}
-	explicit CGet_userinfo_by_idInput(const int &id)
+	explicit CGetUserinfoByIdInput(const int &id)
 		: id(id) {}
-	virtual ~CGet_userinfo_by_idInput() {}
+	virtual ~CGetUserinfoByIdInput() {}
 
 public:
 	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
@@ -50,14 +74,14 @@ private:
 	bool idUsed;
 };
 
-class CGet_userinfo_by_idOutput
+class CGetUserinfoByIdOutput
 {
 public:
-	explicit CGet_userinfo_by_idOutput()
+	explicit CGetUserinfoByIdOutput()
 		: id(0), username(""), userage(0) {}
-	explicit CGet_userinfo_by_idOutput(const int &id, const std::string &username, const int &userage)
+	explicit CGetUserinfoByIdOutput(const int &id, const std::string &username, const int &userage)
 		: id(id), username(username), userage(userage) {}
-	virtual ~CGet_userinfo_by_idOutput() {}
+	virtual ~CGetUserinfoByIdOutput() {}
 
 public:
 	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
@@ -79,14 +103,14 @@ private:
 	bool userageUsed;
 };
 
-class CGet_all_userinfoOutput
+class CGetAllUserinfoOutput
 {
 public:
-	explicit CGet_all_userinfoOutput()
+	explicit CGetAllUserinfoOutput()
 		: id(0), username(""), userage(0) {}
-	explicit CGet_all_userinfoOutput(const int &id, const std::string &username, const int &userage)
+	explicit CGetAllUserinfoOutput(const int &id, const std::string &username, const int &userage)
 		: id(id), username(username), userage(userage) {}
-	virtual ~CGet_all_userinfoOutput() {}
+	virtual ~CGetAllUserinfoOutput() {}
 
 public:
 	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
@@ -108,14 +132,14 @@ private:
 	bool userageUsed;
 };
 
-class CDelete_userInput
+class CDeleteUserInput
 {
 public:
-	explicit CDelete_userInput()
+	explicit CDeleteUserInput()
 		: id(0) {}
-	explicit CDelete_userInput(const int &id)
+	explicit CDeleteUserInput(const int &id)
 		: id(id) {}
-	virtual ~CDelete_userInput() {}
+	virtual ~CDeleteUserInput() {}
 
 public:
 	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
@@ -127,14 +151,110 @@ private:
 	bool idUsed;
 };
 
-class CUpdate_usernameInput
+class CGetUserInfoByNameInput
 {
 public:
-	explicit CUpdate_usernameInput()
+	explicit CGetUserInfoByNameInput()
+		: userName("") {}
+	explicit CGetUserInfoByNameInput(const std::string &userName)
+		: userName(userName) {}
+	virtual ~CGetUserInfoByNameInput() {}
+
+public:
+	void setUserName(const std::string &userName, bool use = true) { this->userName = userName; this->userNameUsed = use; }
+	const std::string &getUserName() const { return this->userName; }
+	const bool &getUserNameUsed() const { return this->userNameUsed; }
+
+private:
+	std::string userName;
+	bool userNameUsed;
+};
+
+class CGetUserInfoByNameOutput
+{
+public:
+	explicit CGetUserInfoByNameOutput()
+		: id(0), userName(""), userAge(0) {}
+	explicit CGetUserInfoByNameOutput(const int &id, const std::string &userName, const int &userAge)
+		: id(id), userName(userName), userAge(userAge) {}
+	virtual ~CGetUserInfoByNameOutput() {}
+
+public:
+	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
+	const int &getId() const { return this->id; }
+	const bool &getIdUsed() const { return this->idUsed; }
+	void setUserName(const std::string &userName, bool use = true) { this->userName = userName; this->userNameUsed = use; }
+	const std::string &getUserName() const { return this->userName; }
+	const bool &getUserNameUsed() const { return this->userNameUsed; }
+	void setUserAge(const int &userAge, bool use = true) { this->userAge = userAge; this->userAgeUsed = use; }
+	const int &getUserAge() const { return this->userAge; }
+	const bool &getUserAgeUsed() const { return this->userAgeUsed; }
+
+private:
+	int id;
+	bool idUsed;
+	std::string userName;
+	bool userNameUsed;
+	int userAge;
+	bool userAgeUsed;
+};
+
+class CGetUserInfoByAgeInput
+{
+public:
+	explicit CGetUserInfoByAgeInput()
+		: userAge(0) {}
+	explicit CGetUserInfoByAgeInput(const int &userAge)
+		: userAge(userAge) {}
+	virtual ~CGetUserInfoByAgeInput() {}
+
+public:
+	void setUserAge(const int &userAge, bool use = true) { this->userAge = userAge; this->userAgeUsed = use; }
+	const int &getUserAge() const { return this->userAge; }
+	const bool &getUserAgeUsed() const { return this->userAgeUsed; }
+
+private:
+	int userAge;
+	bool userAgeUsed;
+};
+
+class CGetUserInfoByAgeOutput
+{
+public:
+	explicit CGetUserInfoByAgeOutput()
+		: id(0), userName(""), userAge(0) {}
+	explicit CGetUserInfoByAgeOutput(const int &id, const std::string &userName, const int &userAge)
+		: id(id), userName(userName), userAge(userAge) {}
+	virtual ~CGetUserInfoByAgeOutput() {}
+
+public:
+	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
+	const int &getId() const { return this->id; }
+	const bool &getIdUsed() const { return this->idUsed; }
+	void setUserName(const std::string &userName, bool use = true) { this->userName = userName; this->userNameUsed = use; }
+	const std::string &getUserName() const { return this->userName; }
+	const bool &getUserNameUsed() const { return this->userNameUsed; }
+	void setUserAge(const int &userAge, bool use = true) { this->userAge = userAge; this->userAgeUsed = use; }
+	const int &getUserAge() const { return this->userAge; }
+	const bool &getUserAgeUsed() const { return this->userAgeUsed; }
+
+private:
+	int id;
+	bool idUsed;
+	std::string userName;
+	bool userNameUsed;
+	int userAge;
+	bool userAgeUsed;
+};
+
+class CUpdateUsernameInput
+{
+public:
+	explicit CUpdateUsernameInput()
 		: username(""), id(0) {}
-	explicit CUpdate_usernameInput(const std::string &username, const int &id)
+	explicit CUpdateUsernameInput(const std::string &username, const int &id)
 		: username(username), id(id) {}
-	virtual ~CUpdate_usernameInput() {}
+	virtual ~CUpdateUsernameInput() {}
 
 public:
 	void setUsername(const std::string &username, bool use = true) { this->username = username; this->usernameUsed = use; }
@@ -151,14 +271,14 @@ private:
 	bool idUsed;
 };
 
-class CUpdate_username_2Input
+class CUpdateUsername2Input
 {
 public:
-	explicit CUpdate_username_2Input()
+	explicit CUpdateUsername2Input()
 		: id(0), username("") {}
-	explicit CUpdate_username_2Input(const int &id, const std::string &username)
+	explicit CUpdateUsername2Input(const int &id, const std::string &username)
 		: id(id), username(username) {}
-	virtual ~CUpdate_username_2Input() {}
+	virtual ~CUpdateUsername2Input() {}
 
 public:
 	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
@@ -175,14 +295,14 @@ private:
 	bool usernameUsed;
 };
 
-class CUpdate_username_3Input
+class CUpdateUsername3Input
 {
 public:
-	explicit CUpdate_username_3Input()
+	explicit CUpdateUsername3Input()
 		: id(0), username("") {}
-	explicit CUpdate_username_3Input(const int &id, const std::string &username)
+	explicit CUpdateUsername3Input(const int &id, const std::string &username)
 		: id(id), username(username) {}
-	virtual ~CUpdate_username_3Input() {}
+	virtual ~CUpdateUsername3Input() {}
 
 public:
 	void setId(const int &id, bool use = true) { this->id = id; this->idUsed = use; }
@@ -199,14 +319,14 @@ private:
 	bool usernameUsed;
 };
 
-class CUpdate_username_4Input
+class CUpdateUsername4Input
 {
 public:
-	explicit CUpdate_username_4Input()
+	explicit CUpdateUsername4Input()
 		: id(""), username("") {}
-	explicit CUpdate_username_4Input(const std::string &id, const std::string &username)
+	explicit CUpdateUsername4Input(const std::string &id, const std::string &username)
 		: id(id), username(username) {}
-	virtual ~CUpdate_username_4Input() {}
+	virtual ~CUpdateUsername4Input() {}
 
 public:
 	void setId(const std::string &id, bool use = true) { this->id = id; this->idUsed = use; }
