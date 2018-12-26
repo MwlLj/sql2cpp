@@ -59,18 +59,20 @@ class CWriteSqliteImpCpp(CWriteBase):
 		self.m_file_handler.clear_write(self.m_content, self.m_file_path, "utf8")
 
 	def __write_implement(self, info_dict):
-		create_tables_sql = info_dict.get(CSqlParse.CREATE_TABELS_SQL)
+		create_table_list = info_dict.get(CSqlParse.CREATE_TABLE_LIST)
 		content = ""
 		content += "{0}::{0}(const std::string &dial, sql::ISql *s, int max)\n".format(self.class_name())
 		content += "\t"*1 + ": m_connPool(s, max)\n"
 		content += "\t"*1 + ', m_dial(dial)\n'
 		content += "{\n"
 		content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
-		if create_tables_sql is not None:
+		if len(create_table_list) > 0:
 			content += "\t"*1 + "if (conn != nullptr) {\n"
-			content += "\t"*2 + 'std::string sql = "\\\n{0}";\n'.format(create_tables_sql)
-			content += "\t"*2 + "conn->exec(sql);\n"
-			content += "\t"*2 + "m_connPool.freeConnect(conn);\n"
+			content += "\t"*2 + 'std::string sql("");\n'
+			for create_sql in create_table_list:
+				content += "\t"*2 + 'sql = "\\\n{0}";\n'.format(create_sql)
+				content += "\t"*2 + "conn->exec(sql);\n"
+				content += "\t"*2 + "m_connPool.freeConnect(conn);\n"
 			content += "\t"*1 + "}\n"
 		content += "}\n"
 		content += "\n"
