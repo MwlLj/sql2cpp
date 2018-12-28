@@ -250,6 +250,7 @@ class CWriteBase(object):
 				content += "\t"*1 + 'sql::ITransaction *trans = conn->begin();\n'
 				content += "\t"*1 + 'if (trans == nullptr) return -1;\n'
 			content += "\t"*1 + 'std::string sql("");\n'
+			content += "\t"*1 + 'bool result = false;\n'
 			if in_isarr == "true":
 				content += "\t"*1 + "for (auto iter = input.begin(); iter != input.end(); ++iter)\n"
 				content += "\t"*1 + "{\n"
@@ -279,7 +280,9 @@ class CWriteBase(object):
 		else:
 			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
 		if output_params is None:
-			content += "\t"*n + 'conn->exec(sql);\n'
+			content += "\t"*n + 'result = conn->exec(sql);\n'
+			if len(input_params) > 1:
+				content += "\t"*n + 'if (!result) break;\n'
 		else:
 			content += "\t"*n + 'bool exeRet = false;\n'
 			content += "\t"*n + 'sql::IRow *row = conn->query(sql, exeRet);\n'
@@ -303,7 +306,12 @@ class CWriteBase(object):
 			content += "\t"*1 + "}\n"
 		if input_params is not None:
 			if is_start_trans is True:
-				content += "\t"*1 + 'trans->commit();\n'
+				content += "\t"*1 + 'if (result) {\n'
+				content += "\t"*2 + 'trans->commit();\n'
+				content += "\t"*1 + '}\n'
+				content += "\t"*1 + 'else {\n'
+				content += "\t"*2 + 'trans->rollback();\n'
+				content += "\t"*1 + '}\n'
 		content += "\t"*1 + 'm_connPool.freeConnect(conn);\n'
 		return content
 
@@ -463,13 +471,13 @@ class CWriteBase(object):
 			if last_is_other is True:
 				tmp += '"'
 			if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
-				tmp += ' << "\\"" << '
+				tmp += """ << "'" << """
 			else:
 				tmp += " << "
 			value = self.__get_input_posture_single(in_isarr, inpams)
 			tmp += value
 			if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
-				tmp += ' << "\\"" << '
+				tmp += """ << "'" << """
 			else:
 				tmp += " << "
 			if next_is_other is True:
