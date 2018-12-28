@@ -220,6 +220,7 @@ class CWriteBase(object):
 	def __write_execute(self, func_name, method_info):
 		content = ""
 		in_isarr = method_info.get(CSqlParse.IN_ISARR)
+		is_start_trans = method_info.get(CSqlParse.IS_START_TRANS)
 		if in_isarr is None:
 			raise SystemExit("[Keyword Error] (function {0}) in_isarr is exist".format(func_name))
 		out_isarr = method_info.get(CSqlParse.OUT_ISARR)
@@ -245,8 +246,9 @@ class CWriteBase(object):
 		content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
 		content += "\t"*1 + 'if (conn == nullptr) return -1;\n'
 		if input_params is not None:
-			content += "\t"*1 + 'sql::ITransaction *trans = conn->begin();\n'
-			content += "\t"*1 + 'if (trans == nullptr) return -1;\n'
+			if is_start_trans is True:
+				content += "\t"*1 + 'sql::ITransaction *trans = conn->begin();\n'
+				content += "\t"*1 + 'if (trans == nullptr) return -1;\n'
 			content += "\t"*1 + 'std::string sql("");\n'
 			if in_isarr == "true":
 				content += "\t"*1 + "for (auto iter = input.begin(); iter != input.end(); ++iter)\n"
@@ -300,7 +302,8 @@ class CWriteBase(object):
 		if in_isarr == "true":
 			content += "\t"*1 + "}\n"
 		if input_params is not None:
-			content += "\t"*1 + 'trans->commit();\n'
+			if is_start_trans is True:
+				content += "\t"*1 + 'trans->commit();\n'
 		content += "\t"*1 + 'm_connPool.freeConnect(conn);\n'
 		return content
 
