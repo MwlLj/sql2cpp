@@ -82,7 +82,7 @@ class CWriteSqliteImpH(CWriteBase):
 		for method_info in method_list:
 			content += self.write_method_define(method_info)
 		content += "\npublic:\n"
-		content += "\t"*1 + "sql::IConnect *connect() { m_connPool.connect(m_dial); }\n"
+		content += "\t"*1 + "sql::IConnect *connect() { return m_connPool.connect(m_dial); }\n"
 		content += "\t"*1 + "void freeConnect(sql::IConnect *conn) { m_connPool.freeConnect(conn); }\n"
 		return content
 
