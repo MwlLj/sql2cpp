@@ -281,7 +281,7 @@ class CWriteBase(object):
 			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
 		if output_params is None:
 			content += "\t"*n + 'result = conn->exec(sql);\n'
-			if len(input_params) > 1:
+			if in_isarr == "true":
 				content += "\t"*n + 'if (!result) break;\n'
 		else:
 			content += "\t"*n + 'bool exeRet = false;\n'
