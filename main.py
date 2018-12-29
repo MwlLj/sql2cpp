@@ -92,11 +92,12 @@ class CCmdHandle(CCmdlineHandle):
 		writer.write(info_dict)
 		if self.m_mode == CCmdHandle.MODE_UPDATE:
 			# 更新实现的h文件
-			basename = os.path.basename(self.m_file_path)
-			imp_h_path = os.path.join(h_obj, "{0}_db_handler.h".format(namespace))
+			basename = os.path.basename(parser.get_file_path())
+			name = os.path.splitext(basename)[0]
+			imp_h_path = os.path.join(h_obj, "{0}_db_handler.h".format(name))
 			if os.path.exists(imp_h_path) is False:
 				raise RuntimeError(imp_h_path + "is not exist")
-			imp_cpp_path = os.path.join(cpp_obj, "{0}_db_handler.cpp".format(namespace))
+			imp_cpp_path = os.path.join(cpp_obj, "{0}_db_handler.cpp".format(name))
 			if os.path.exists(imp_cpp_path) is False:
 				raise RuntimeError(imp_cpp_path + "is not exist")
 			updater = CUpdateSqliteImpH(imp_h_path)

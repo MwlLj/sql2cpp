@@ -81,6 +81,9 @@ class CWriteSqliteImpH(CWriteBase):
 		content += "\t"*1 + "/*@@start@@*/" + "\n"
 		for method_info in method_list:
 			content += self.write_method_define(method_info)
+		content += "\npublic:\n"
+		content += "\t"*1 + "sql::IConnect *connect() { m_connPool.connect(m_dial); }\n"
+		content += "\t"*1 + "void freeConnect(sql::IConnect *conn) { m_connPool.freeConnect(conn); }\n"
 		return content
 
 	def __write_private_member(self):
