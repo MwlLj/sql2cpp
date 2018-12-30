@@ -169,7 +169,7 @@ class CWriteBase(object):
 				content += "\t"*(tmp_len+1) + "{0} {1} = 0;\n".format(param_type, param_name)
 				content += "\t"*(tmp_len+1) + "ss << colValue[{0}];\n".format(i)
 				content += "\t"*(tmp_len+1) + "ss >> {0};\n".format(param_name)
-				content += "\t"*(tmp_len+1) + 'ss.str("");\n'
+				content += "\t"*(tmp_len+1) + 'ss.clear();\n'
 				value = param_name
 			content += "\t"*(tmp_len+1) + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
 			content += "\t"*tmp_len + "}\n"
@@ -208,7 +208,7 @@ class CWriteBase(object):
 				content += "\t"*2 + "{0} {1} = 0;\n".format(param_type, param_name)
 				content += "\t"*2 + "ss << cols[{0}];\n".format(i)
 				content += "\t"*2 + "ss >> {0};\n".format(param_name)
-				content += "\t"*2 + 'ss.str("");\n'
+				content += "\t"*2 + 'ss.clear();\n'
 				value = param_name
 			content += "\t"*2 + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
 			i += 1
