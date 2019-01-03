@@ -114,7 +114,7 @@ class CWriteBase(object):
 		bref = method_info.get(CSqlParse.BREF)
 		if bref is not None:
 			content += "\t"*1 + "// " + bref + "\n"
-		content += "\t"*1 + "uint32_t {0}({1});\n".format(func_name, self.get_method_param_list(func_name, method_info))
+		content += "\t"*1 + "uint32_t {0}({1}, bool isStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, self.get_method_param_list(func_name, method_info))
 		return content
 
 	def write_method_implement(self, method_info):
@@ -124,7 +124,7 @@ class CWriteBase(object):
 		# if output_params is not None:
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
-		content += "uint32_t {0}::{1}({2})\n".format(self.class_name(), func_name, self.get_method_param_list(func_name, method_info))
+		content += "uint32_t {0}::{1}({2}, bool isStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, self.get_method_param_list(func_name, method_info))
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
@@ -243,12 +243,19 @@ class CWriteBase(object):
 		if in_isarr == "true":
 			n = 2
 		content += "\t"*1 + 'uint32_t ret = 0;\n\n'
-		content += "\t"*1 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
-		content += "\t"*1 + 'if (conn == nullptr) return -1;\n'
+		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
+		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
+		content += "\t"*1 + 'if (!isStartTrans) {\n'
+		content += "\t"*2 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
+		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
 		if input_params is not None:
 			if is_start_trans is True:
-				content += "\t"*1 + 'sql::ITransaction *trans = conn->begin();\n'
-				content += "\t"*1 + 'if (trans == nullptr) return -1;\n'
+				content += "\t"*2 + 'sql::ITransaction *trans = conn->begin();\n'
+				content += "\t"*2 + 'if (trans == nullptr) return -1;\n'
+			content += "\t"*1 + '}\n'
+			content += "\t"*1 + 'else {\n'
+			content += "\t"*2 + 'conn = reuseConn;\n'
+			content += "\t"*1 + '}\n'
 			content += "\t"*1 + 'std::string sql("");\n'
 			content += "\t"*1 + 'bool result = false;\n'
 			if in_isarr == "true":
@@ -306,11 +313,13 @@ class CWriteBase(object):
 			content += "\t"*1 + "}\n"
 		if input_params is not None:
 			if is_start_trans is True:
-				content += "\t"*1 + 'if (result) {\n'
-				content += "\t"*2 + 'trans->commit();\n'
-				content += "\t"*1 + '}\n'
-				content += "\t"*1 + 'else {\n'
-				content += "\t"*2 + 'trans->rollback();\n'
+				content += "\t"*1 + 'if (!isStartTrans) {\n'
+				content += "\t"*2 + 'if (result) {\n'
+				content += "\t"*3 + 'trans->commit();\n'
+				content += "\t"*2 + '}\n'
+				content += "\t"*2 + 'else {\n'
+				content += "\t"*3 + 'trans->rollback();\n'
+				content += "\t"*2 + '}\n'
 				content += "\t"*1 + '}\n'
 		content += "\t"*1 + 'm_connPool.freeConnect(conn);\n'
 		return content
