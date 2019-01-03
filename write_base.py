@@ -246,11 +246,11 @@ class CWriteBase(object):
 		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
 		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
 		content += "\t"*1 + 'if (!isStartTrans) {\n'
-		content += "\t"*2 + 'sql::IConnect *conn = m_connPool.connect(m_dial);\n'
+		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
 		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
 		if input_params is not None:
 			if is_start_trans is True:
-				content += "\t"*2 + 'sql::ITransaction *trans = conn->begin();\n'
+				content += "\t"*2 + 'trans = conn->begin();\n'
 				content += "\t"*2 + 'if (trans == nullptr) return -1;\n'
 			content += "\t"*1 + '}\n'
 			content += "\t"*1 + 'else {\n'
