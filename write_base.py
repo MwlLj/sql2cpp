@@ -320,8 +320,8 @@ class CWriteBase(object):
 				content += "\t"*2 + 'else {\n'
 				content += "\t"*3 + 'trans->rollback();\n'
 				content += "\t"*2 + '}\n'
+				content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
 				content += "\t"*1 + '}\n'
-		content += "\t"*1 + 'm_connPool.freeConnect(conn);\n'
 		return content
 
 	def __write_group(self, func_name, method_info, in_isarr, is_brace, input_params, sql, n):
