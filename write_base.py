@@ -51,53 +51,65 @@ class CWriteBase(object):
 
 	def get_method_param_list(self, method_info, method_param_list, param_no):
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
-		input_name = self.get_input_class_name(func_name, method_info)
-		output_name = self.get_output_class_name(func_name, method_info)
-		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
-		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
-		in_isarr = method_info.get(CSqlParse.IN_ISARR)
-		out_isarr = method_info.get(CSqlParse.OUT_ISARR)
-		in_ismul = None
-		out_ismul = None
-		if in_isarr == "true":
-			in_ismul = True
-		else:
-			in_ismul = False
-		if out_isarr == "true":
-			out_ismul = True
-		else:
-			out_ismul = False
-		input_params_len = 0
-		output_params_len = 0
-		if input_params is not None:
-			input_params_len = len(input_params)
-		if output_params is not None:
-			output_params_len = len(output_params)
-		input_str = input_name
-		output_str = output_name
-		if in_ismul is True:
-			input_str = "std::list<{0}>".format(input_name)
-		if out_ismul is True:
-			output_str = "std::list<{0}>".format(output_name)
-		if input_params_len == 0 and output_params_len == 0:
-			method_param_list += ""
-		elif input_params_len > 0 and output_params_len == 0:
-			method_param_list += "const {0} &input{1}".format(input_str, param_no)
-		elif input_params_len == 0 and output_params_len > 0:
-			method_param_list += "{0} &output{1}".format(output_str, param_no)
-		elif input_params_len > 0 and output_params_len > 0:
-			method_param_list += "const {0} &input{2}, {1} &output{2}".format(input_str, output_str, param_no)
-		else:
-			return None
-		sub_func_list = method_info.get(CSqlParse.SUB_FUNC_LIST)
+		sub_func_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
+		def inner(method_param_list, param_no):
+			input_name = self.get_input_class_name(func_name, method_info)
+			output_name = self.get_output_class_name(func_name, method_info)
+			input_params = method_info.get(CSqlParse.INPUT_PARAMS)
+			output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
+			in_isarr = method_info.get(CSqlParse.IN_ISARR)
+			out_isarr = method_info.get(CSqlParse.OUT_ISARR)
+			in_ismul = None
+			out_ismul = None
+			if in_isarr == "true":
+				in_ismul = True
+			else:
+				in_ismul = False
+			if out_isarr == "true":
+				out_ismul = True
+			else:
+				out_ismul = False
+			input_params_len = 0
+			output_params_len = 0
+			if input_params is not None:
+				input_params_len = len(input_params)
+			if output_params is not None:
+				output_params_len = len(output_params)
+			input_str = input_name
+			output_str = output_name
+			if in_ismul is True:
+				input_str = "std::list<{0}>".format(input_name)
+			if out_ismul is True:
+				output_str = "std::list<{0}>".format(output_name)
+			if input_params_len == 0 and output_params_len == 0:
+				method_param_list += ""
+			elif input_params_len > 0 and output_params_len == 0:
+				method_param_list += "const {0} &input{1}".format(input_str, param_no)
+			elif input_params_len == 0 and output_params_len > 0:
+				method_param_list += "{0} &output{1}".format(output_str, param_no)
+			elif input_params_len > 0 and output_params_len > 0:
+				method_param_list += "const {0} &input{2}, {1} &output{2}".format(input_str, output_str, param_no)
+			else:
+				return None
+			param_no += 1
+			return method_param_list, param_no
 		if sub_func_list is None:
-			return method_param_list
+			method_param_list, param_no = inner(method_param_list, param_no)
 		else:
+			i = 0
+			length = len(sub_func_list)
 			for sub_func_name, sub_func_index in sub_func_list:
+				i += 1
+				if func_name == sub_func_name:
+					method_param_list, param_no = inner(method_param_list, param_no)
+					if i < length:
+						method_param_list += ", "
+					continue
 				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
-				method_param_list += ", "
-				method_param_list = self.get_method_param_list(method, method_param_list, self.__sub_func_index_change(sub_func_index))
-		return method_param_list
+				method_param_list, param_no = self.get_method_param_list(method, method_param_list, param_no)
+				if i < length:
+					method_param_list += ", "
+		return method_param_list, param_no
 
 	def __sub_func_index_change(self, sub_func_index):
 		if sub_func_index == "":
@@ -145,10 +157,8 @@ class CWriteBase(object):
 		bref = method_info.get(CSqlParse.BREF)
 		if bref is not None:
 			content += "\t"*1 + "// " + bref + "\n"
-		param_no = ""
-		if method_info.get(CSqlParse.SUB_FUNC_LIST) is not None:
-			param_no = "0"
-		content += "\t"*1 + "uint32_t {0}({1}, bool isStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, self.get_method_param_list(method_info, "", param_no))
+		c, _ = self.get_method_param_list(method_info, "", 0)
+		content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, c)
 		return content
 
 	def write_method_implement(self, method_info):
@@ -158,10 +168,8 @@ class CWriteBase(object):
 		# if output_params is not None:
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
-		param_no = ""
-		if method_info.get(CSqlParse.SUB_FUNC_LIST) is not None:
-			param_no = "0"
-		content += "uint32_t {0}::{1}({2}, bool isStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, self.get_method_param_list(method_info, "", param_no))
+		c, _ = self.get_method_param_list(method_info, "", 0)
+		content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, c)
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
@@ -174,7 +182,7 @@ class CWriteBase(object):
 		content += "\n"
 		return content
 
-	def __read_data(self, func_name, output_params, isarr, method_info):
+	def __read_data(self, func_name, output_params, isarr, method_info, param_no):
 		content = ""
 		var_type = self.get_output_class_name(func_name, method_info)
 		output_params_len = len(output_params)
@@ -185,7 +193,7 @@ class CWriteBase(object):
 		if isarr is True:
 			content += "\t"*2 + "{0} tmp;\n".format(var_type)
 		content += "\t"*2 + "std::stringstream ss;\n"
-		tmp = "output."
+		tmp = "output{0}.".format(param_no)
 		if isarr is True:
 			tmp = "tmp."
 		i = 0
@@ -206,7 +214,7 @@ class CWriteBase(object):
 			i += 1
 		if isarr is True:
 			# content += "\t"*1 + "}\n"
-			content += "\t"*2 + "output.push_back(tmp);\n"
+			content += "\t"*2 + "output{0}.push_back(tmp);\n".format(param_no)
 		return content
 
 	def __write_execute(self, func_name, method_info):
@@ -220,7 +228,8 @@ class CWriteBase(object):
 		content += "\t"*1 + 'uint32_t ret = 0;\n\n'
 		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
 		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
-		content += "\t"*1 + 'if (!isStartTrans) {\n'
+		content += "\t"*1 + 'bool result = false;\n'
+		content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
 		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
 		if input_params is not None:
@@ -232,18 +241,15 @@ class CWriteBase(object):
 			content += "\t"*2 + 'conn = reuseConn;\n'
 			content += "\t"*1 + '}\n'
 			content += "\t"*1 + 'std::string sql("");\n'
-			content += "\t"*1 + 'bool result = false;\n'
 			content += "\t"*n + "std::stringstream ss;\n"
-		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
-		if sub_func_sort_list is None:
-			content += self.__write_input(func_name, method_info, "")
 		else:
-			for func_name, sub_func_index in sub_func_sort_list:
-				method = self.m_parser.get_methodinfo_by_methodname(func_name)
-				content += self.__write_input(func_name, method, sub_func_index)
+			content += "\t"*1 + '}\n'
+		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
+		c, _ = self.__write_input(method_info, "", 0)
+		content += c
 		if input_params is not None:
 			if is_start_trans is True:
-				content += "\t"*1 + 'if (!isStartTrans) {\n'
+				content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 				content += "\t"*2 + 'if (result) {\n'
 				content += "\t"*3 + 'trans->commit();\n'
 				content += "\t"*2 + '}\n'
@@ -254,9 +260,8 @@ class CWriteBase(object):
 				content += "\t"*1 + '}\n'
 		return content
 
-	def __write_input(self, func_name, method_info, sub_func_index):
-		param_no = self.__sub_func_index_change(sub_func_index)
-		content = ""
+	def __write_input(self, method_info, content, param_no):
+		func_name = method_info.get(CSqlParse.FUNC_NAME)
 		in_isarr = method_info.get(CSqlParse.IN_ISARR)
 		is_start_trans = method_info.get(CSqlParse.IS_START_TRANS)
 		if in_isarr is None:
@@ -273,98 +278,65 @@ class CWriteBase(object):
 		if is_brace is None:
 			is_brace = False
 		is_group = method_info.get(CSqlParse.IS_GROUP)
-		sql = method_info.get(CSqlParse.SQL)
-		if sql is None:
-			sql = ""
-		sql = re.sub(r"\n", "\n\t\t", sql)
 		n = 1
 		if in_isarr == "true":
 			n = 2
-		"""
-		content += "\t"*1 + 'uint32_t ret = 0;\n\n'
-		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
-		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
-		content += "\t"*1 + 'if (!isStartTrans) {\n'
-		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
-		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
-		if input_params is not None:
-			if is_start_trans is True:
-				content += "\t"*2 + 'trans = conn->begin();\n'
-				content += "\t"*2 + 'if (trans == nullptr) return -1;\n'
-			content += "\t"*1 + '}\n'
-			content += "\t"*1 + 'else {\n'
-			content += "\t"*2 + 'conn = reuseConn;\n'
-			content += "\t"*1 + '}\n'
-		"""
-		if input_params is not None:
-			if in_isarr == "true":
-				content += "\t"*1 + "for (auto iter = input{0}.begin(); iter != input{0}.end(); ++iter)\n".format(param_no)
-				content += "\t"*1 + "{\n"
-			if is_group is None or is_group is False:
-				if is_brace is False:
-					content += "\t"*n + self.__replace_sql_by_input_params(input_params, in_isarr, sql, param_no, False)
-					"""
-					content += "\t"*n + 'snprintf(buf, sizeof(buf), "{0}"\n'.format(self.__replace_sql_by_input_params(input_params, sql, False))
-					content += "\t"*(n+1) + ", "
-					content += self.__get_input_posture(in_isarr, input_params)
-					content += ");\n"
-					"""
+		sub_func_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
+		def inner(content, param_no):
+			sql = method_info.get(CSqlParse.SQL)
+			if sql is None:
+				sql = ""
+			sql = re.sub(r"\n", "\n\t\t", sql)
+			if input_params is not None:
+				if in_isarr == "true":
+					content += "\t"*1 + "for (auto iter = input{0}.begin(); iter != input{0}.end(); ++iter)\n".format(param_no)
+					content += "\t"*1 + "{\n"
+				if is_group is None or is_group is False:
+					if is_brace is False:
+						content += "\t"*n + self.__replace_sql_by_input_params(input_params, in_isarr, sql, param_no, False)
+					else:
+						sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, param_no, False)
+						content += '\t'*n + 'ss << "' + sql
 				else:
-					sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, param_no, False)
-					content += '\t'*n + 'ss << "' + sql
-					"""
-					sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, False)
-					content += "\t"*n + 'snprintf(buf, sizeof(buf), "{0}"\n'.format(sql)
-					content += "\t"*(n+1) + ", "
-					content += self.__get_input_brace_posture(in_isarr, input_params, fulls)
-					content += ");\n"
-					"""
+					content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n)
+				content += "\t"*n + 'sql = ss.str();\n'
+				content += "\t"*n + 'ss.clear();\n'
 			else:
-				content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, n)
-			content += "\t"*n + 'sql = ss.str();\n'
-			content += "\t"*n + 'ss.clear();\n'
-		else:
-			content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
-		if output_params is None:
-			content += "\t"*n + 'result = conn->exec(sql);\n'
+				content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
+			if output_params is None:
+				content += "\t"*n + 'result = conn->exec(sql);\n'
+				if in_isarr == "true":
+					content += "\t"*n + 'if (!result) break;\n'
+			else:
+				content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
+				content += "\t"*n + 'if (result == false) return -1;\n'
+				content += "\t"*n + 'if (result == true && row == nullptr) return 0;\n'
+				var_type = self.get_output_class_name(func_name, method_info)
+				if out_isarr == "true":
+					content += "\t"*n + "output{0}.clear();\n".format(param_no)
+				content += "\t"*n + 'while (row->next()) {\n'
+				isarr = False
+				if out_isarr == "true":
+					isarr = True
+				content += self.__read_data(func_name, output_params, isarr, method_info, 0)
+				content += "\t"*n + '}\n'
+				content += "\t"*n + 'row->close();\n'
 			if in_isarr == "true":
-				content += "\t"*n + 'if (!result) break;\n'
+				content += "\t"*1 + "}\n"
+			param_no += 1
+			return content, param_no
+		if sub_func_list is None:
+			content, param_no = inner(content, param_no)
 		else:
-			content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
-			content += "\t"*n + 'if (result == false) return -1;\n'
-			content += "\t"*n + 'if (result == true && row == nullptr) return 0;\n'
-			var_type = self.get_output_class_name(func_name, method_info)
-			# if out_isarr == "true":
-			# 	content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
-			# else:
-			# 	content += "\t"*n + "{0} result;\n".format(var_type)
-			if out_isarr == "true":
-				content += "\t"*n + "output{0}.clear();\n".format(param_no)
-			content += "\t"*n + 'while (row->next()) {\n'
-			isarr = False
-			if out_isarr == "true":
-				isarr = True
-			content += self.__read_data(func_name, output_params, isarr, method_info)
-			content += "\t"*n + '}\n'
-			content += "\t"*n + 'row->close();\n'
-		if in_isarr == "true":
-			content += "\t"*1 + "}\n"
-		"""
-		if input_params is not None:
-			if is_start_trans is True:
-				content += "\t"*1 + 'if (!isStartTrans) {\n'
-				content += "\t"*2 + 'if (result) {\n'
-				content += "\t"*3 + 'trans->commit();\n'
-				content += "\t"*2 + '}\n'
-				content += "\t"*2 + 'else {\n'
-				content += "\t"*3 + 'trans->rollback();\n'
-				content += "\t"*2 + '}\n'
-				content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
-				content += "\t"*1 + '}\n'
-		"""
-		return content
+			for sub_func_name, sub_func_index in sub_func_list:
+				if func_name == sub_func_name:
+					content, param_no = inner(content, param_no)
+					continue
+				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
+				content, param_no = self.__write_input(method, content, param_no)
+		return content, param_no
 
-	def __write_group(self, func_name, method_info, in_isarr, is_brace, input_params, sql, n):
+	def __write_group(self, func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n):
 		content = ""
 		# write implement
 		sql_group_info = method_info.get(CSqlParse.SQL_GROUP_INFO)
@@ -418,7 +390,7 @@ class CWriteBase(object):
 
 			tmp = ""
 			if is_brace is True:
-				sql_tmp, fulls = self.__replace_sql_brace(input_params, in_isarr, sql_tmp, True)
+				sql_tmp, fulls = self.__replace_sql_brace(input_params, in_isarr, sql_tmp, param_no, True)
 				tmp += '\t'*(n+1) + 'ss << "' + sql_tmp
 				"""
 				sql_tmp, fulls = self.__replace_sql_brace(input_params, in_isarr, sql_tmp, True)
