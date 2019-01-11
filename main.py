@@ -106,10 +106,10 @@ class CCmdHandle(CCmdlineHandle):
 			updater.update(info_dict)
 		elif self.m_mode == CCmdHandle.MODE_CREATE:
 			# 写头文件
-			writer = CWriteSqliteImpH(parser.get_file_path(), root=h_obj)
+			writer = CWriteSqliteImpH(parser, parser.get_file_path(), root=h_obj)
 			writer.write(info_dict)
 			# 写源文件
-			writer = CWriteSqliteImpCpp(parser.get_file_path(), root=cpp_obj)
+			writer = CWriteSqliteImpCpp(parser, parser.get_file_path(), root=cpp_obj)
 			writer.write(info_dict)
 
 	def __print_help_info(self):

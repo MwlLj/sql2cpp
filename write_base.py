@@ -7,6 +7,9 @@ from string_tools import CStringTools
 
 
 class CWriteBase(object):
+	def __init__(self, parser):
+		self.m_parser = parser
+
 	def define_name(self):
 		return ""
 
@@ -46,39 +49,68 @@ class CWriteBase(object):
 		output_name = "C{0}Output".format(hump_func_name)
 		return output_name
 
-	def get_method_param_list(self, func_name, method_info):
+	def get_method_param_list(self, method_info, method_param_list, param_no):
+		func_name = method_info.get(CSqlParse.FUNC_NAME)
 		input_name = self.get_input_class_name(func_name, method_info)
 		output_name = self.get_output_class_name(func_name, method_info)
-		method_param_list = ""
 		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 		in_isarr = method_info.get(CSqlParse.IN_ISARR)
 		out_isarr = method_info.get(CSqlParse.OUT_ISARR)
-		if input_params is None and output_params is None:
-			method_param_list = ""
-		elif input_params is not None and output_params is None:
-			if in_isarr is not None and in_isarr == "true":
-				method_param_list = "const std::list<{0}> &input".format(input_name)
-			else:
-				method_param_list = "const {0} &input".format(input_name)
-		elif input_params is None and output_params is not None:
-			if out_isarr is not None and out_isarr == "true":
-				method_param_list = "std::list<{0}> &output".format(output_name)
-			else:
-				method_param_list = "{0} &output".format(output_name)
+		in_ismul = None
+		out_ismul = None
+		if in_isarr == "true":
+			in_ismul = True
 		else:
-			in_template = ""
-			out_template = ""
-			if in_isarr is not None and in_isarr == "true":
-				in_template = "const std::list<{0}> &input".format(input_name)
-			else:
-				in_template = "const {0} &input".format(input_name)
-			if out_isarr is not None and out_isarr == "true":
-				out_template = "std::list<{0}> &output".format(output_name)
-			else:
-				out_template = "{0} &output".format(output_name)
-			method_param_list = in_template + ", " + out_template
+			in_ismul = False
+		if out_isarr == "true":
+			out_ismul = True
+		else:
+			out_ismul = False
+		input_params_len = 0
+		output_params_len = 0
+		if input_params is not None:
+			input_params_len = len(input_params)
+		if output_params is not None:
+			output_params_len = len(output_params)
+		input_str = input_name
+		output_str = output_name
+		if in_ismul is True:
+			input_str = "std::list<{0}>".format(input_name)
+		if out_ismul is True:
+			output_str = "std::list<{0}>".format(output_name)
+		if input_params_len == 0 and output_params_len == 0:
+			method_param_list += ""
+		elif input_params_len > 0 and output_params_len == 0:
+			method_param_list += "const {0} &input{1}".format(input_str, param_no)
+		elif input_params_len == 0 and output_params_len > 0:
+			method_param_list += "{0} &output{1}".format(output_str, param_no)
+		elif input_params_len > 0 and output_params_len > 0:
+			method_param_list += "const {0} &input{2}, {1} &output{2}".format(input_str, output_str, param_no)
+		else:
+			return None
+		sub_func_list = method_info.get(CSqlParse.SUB_FUNC_LIST)
+		if sub_func_list is None:
+			return method_param_list
+		else:
+			for sub_func_name, sub_func_index in sub_func_list:
+				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
+				print(method)
+				method_param_list += ", "
+				method_param_list = self.get_method_param_list(method, method_param_list, self.__sub_func_index_change(sub_func_index))
 		return method_param_list
+
+	def __sub_func_index_change(self, sub_func_index):
+		if sub_func_index == "":
+			return ""
+		result = ""
+		if int(sub_func_index) < 0:
+			result = "N" + str(int(sub_func_index) * -1)
+		elif int(sub_func_index) > 0:
+			result = "P" + sub_func_index
+		else:
+			result = "0"
+		return result
 
 	def write_member_var(self, param_type, param_name):
 		content = ""
@@ -114,7 +146,10 @@ class CWriteBase(object):
 		bref = method_info.get(CSqlParse.BREF)
 		if bref is not None:
 			content += "\t"*1 + "// " + bref + "\n"
-		content += "\t"*1 + "uint32_t {0}({1}, bool isStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, self.get_method_param_list(func_name, method_info))
+		param_no = ""
+		if method_info.get(CSqlParse.SUB_FUNC_LIST) is not None:
+			param_no = "0"
+		content += "\t"*1 + "uint32_t {0}({1}, bool isStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, self.get_method_param_list(method_info, "", param_no))
 		return content
 
 	def write_method_implement(self, method_info):
@@ -124,7 +159,10 @@ class CWriteBase(object):
 		# if output_params is not None:
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
-		content += "uint32_t {0}::{1}({2}, bool isStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, self.get_method_param_list(func_name, method_info))
+		param_no = ""
+		if method_info.get(CSqlParse.SUB_FUNC_LIST) is not None:
+			param_no = "0"
+		content += "uint32_t {0}::{1}({2}, bool isStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, self.get_method_param_list(method_info, "", param_no))
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
@@ -135,55 +173,6 @@ class CWriteBase(object):
 		content += "\t"*1 + "return ret;\n"
 		content += "}\n"
 		content += "\n"
-		return content
-
-	def __write_callback(self, func_name, out_isarr, output_params):
-		content = ""
-		callback_name = func_name + "Callback"
-		var_type = self.get_output_class_name(func_name)
-		isarr = False
-		if out_isarr is not None and out_isarr == "true":
-			isarr = True
-			var_type = "std::list<{0}>".format(var_type)
-		content += "int {0}(void *data, int colCount, char **colValue, char **colName)\n".format(callback_name)
-		content += "{\n"
-		content += "\t"*1 + "int ret = 0;\n"
-		content += "\n"
-		content += "\t"*1 + "{0} *p = reinterpret_cast<{0}*>(data);\n".format(var_type)
-		content += "\t"*1 + "if (p == nullptr) return -1;\n"
-		tmp = "p->"
-		tmp_len = 1
-		if isarr is True:
-			tmp = "tmp."
-			tmp_len = 1
-			content += "\t"*1 + "{0} tmp;\n".format(self.get_output_class_name(func_name))
-			# content += "\t"*1 + "for (int i = 0; i < colCount; ++i)\n"
-			# content += "\t"*1 + "{\n"
-		i = 0
-		content += "\t"*tmp_len + "std::stringstream ss;\n"
-		for param in output_params:
-			param_type = param.get(CSqlParse.PARAM_TYPE)
-			param_name = param.get(CSqlParse.PARAM_NAME)
-			if param_type is None or param_name is None:
-				continue
-			value = "colValue[{0}]".format(i)
-			param_type = self.type_change(param_type)
-			content += "\t"*tmp_len + "if (colValue[{0}] != nullptr) ".format(i) + "{\n"
-			if param_type != "std::string":
-				content += "\t"*(tmp_len+1) + "{0} {1} = 0;\n".format(param_type, param_name)
-				content += "\t"*(tmp_len+1) + "ss << colValue[{0}];\n".format(i)
-				content += "\t"*(tmp_len+1) + "ss >> {0};\n".format(param_name)
-				content += "\t"*(tmp_len+1) + 'ss.clear();\n'
-				value = param_name
-			content += "\t"*(tmp_len+1) + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
-			content += "\t"*tmp_len + "}\n"
-			i += 1
-		if isarr is True:
-			# content += "\t"*1 + "}\n"
-			content += "\t"*1 + "p->push_back(tmp);\n"
-		content += "\n"
-		content += "\t"*1 + "return ret;\n"
-		content += "}\n"
 		return content
 
 	def __read_data(self, func_name, output_params, isarr, method_info):

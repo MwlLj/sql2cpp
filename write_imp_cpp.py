@@ -10,7 +10,8 @@ from write_base import CWriteBase
 
 
 class CWriteSqliteImpCpp(CWriteBase):
-	def __init__(self, file_path, root="."):
+	def __init__(self, parser, file_path, root="."):
+		CWriteBase.__init__(self, parser)
 		self.m_file_handler = CFileHandle()
 		self.m_file_name = ""
 		self.m_file_path = ""
