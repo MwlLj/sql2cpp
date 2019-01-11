@@ -128,7 +128,7 @@ class CWriteBase(object):
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
-		content += "\t"*1 + "if (!exeRet) {\n"
+		content += "\t"*1 + "if (!result) {\n"
 		content += "\t"*2 + "ret = 1;\n"
 		content += "\t"*1 + "}\n"
 		content += "\n"
@@ -295,10 +295,9 @@ class CWriteBase(object):
 			if in_isarr == "true":
 				content += "\t"*n + 'if (!result) break;\n'
 		else:
-			content += "\t"*n + 'bool exeRet = false;\n'
-			content += "\t"*n + 'sql::IRow *row = conn->query(sql, exeRet);\n'
-			content += "\t"*n + 'if (exeRet == false) return -1;\n'
-			content += "\t"*n + 'if (exeRet == true && row == nullptr) return 0;\n'
+			content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
+			content += "\t"*n + 'if (result == false) return -1;\n'
+			content += "\t"*n + 'if (result == true && row == nullptr) return 0;\n'
 			var_type = self.get_output_class_name(func_name, method_info)
 			# if out_isarr == "true":
 			# 	content += "\t"*n + "std::list<{0}> result;\n".format(var_type)
