@@ -128,7 +128,7 @@ class CWriteBase(object):
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
-		content += "\t"*1 + "if (!result) {\n"
+		content += "\t"*1 + "if (!exeRet) {\n"
 		content += "\t"*2 + "ret = 1;\n"
 		content += "\t"*1 + "}\n"
 		content += "\n"
