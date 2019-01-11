@@ -247,17 +247,21 @@ class CWriteBase(object):
 		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
 		c, _ = self.__write_input(method_info, "", 0)
 		content += c
+		"""
 		if input_params is not None:
 			if is_start_trans is True:
 				content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 				content += "\t"*2 + 'if (result) {\n'
 				content += "\t"*3 + 'trans->commit();\n'
+				content += "\t"*3 + 'return 0;\n'
 				content += "\t"*2 + '}\n'
 				content += "\t"*2 + 'else {\n'
 				content += "\t"*3 + 'trans->rollback();\n'
+				content += "\t"*3 + 'return 1;\n'
 				content += "\t"*2 + '}\n'
 				content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
 				content += "\t"*1 + '}\n'
+		"""
 		return content
 
 	def __write_input(self, method_info, content, param_no):
@@ -282,6 +286,21 @@ class CWriteBase(object):
 		if in_isarr == "true":
 			n = 2
 		sub_func_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
+		def judge_result():
+			content = ""
+			if is_start_trans is True:
+				content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
+				content += "\t"*2 + 'if (result) {\n'
+				content += "\t"*3 + 'trans->commit();\n'
+				content += "\t"*3 + 'return 0;\n'
+				content += "\t"*2 + '}\n'
+				content += "\t"*2 + 'else {\n'
+				content += "\t"*3 + 'trans->rollback();\n'
+				content += "\t"*3 + 'return 1;\n'
+				content += "\t"*2 + '}\n'
+				content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
+				content += "\t"*1 + '}\n'
+			return content
 		def inner(content, param_no):
 			sql = method_info.get(CSqlParse.SQL)
 			if sql is None:
@@ -309,8 +328,14 @@ class CWriteBase(object):
 					content += "\t"*n + 'if (!result) break;\n'
 			else:
 				content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
-				content += "\t"*n + 'if (result == false) return -1;\n'
-				content += "\t"*n + 'if (result == true && row == nullptr) return 0;\n'
+				content += "\t"*n + 'if (result == false) {\n'
+				content += "\t"*(n+1) + 'if (trans != nullptr) trans->rollback();\n'
+				content += "\t"*(n+1) + 'return -1;\n'
+				content += "\t"*n + '}\n'
+				content += "\t"*n + 'if (result == true && row == nullptr) {\n'
+				content += "\t"*(n+1) + 'if (trans != nullptr) trans->commit();\n'
+				content += "\t"*(n+1) + 'return 0;\n'
+				content += "\t"*n + '}\n'
 				var_type = self.get_output_class_name(func_name, method_info)
 				if out_isarr == "true":
 					content += "\t"*n + "output{0}.clear();\n".format(param_no)
@@ -323,6 +348,7 @@ class CWriteBase(object):
 				content += "\t"*n + 'row->close();\n'
 			if in_isarr == "true":
 				content += "\t"*1 + "}\n"
+			content += judge_result()
 			param_no += 1
 			return content, param_no
 		if sub_func_list is None:
