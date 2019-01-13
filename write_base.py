@@ -182,17 +182,17 @@ class CWriteBase(object):
 		content += "\n"
 		return content
 
-	def __read_data(self, func_name, output_params, isarr, method_info, param_no):
+	def __read_data(self, func_name, output_params, isarr, method_info, n, param_no):
 		content = ""
 		var_type = self.get_output_class_name(func_name, method_info)
 		output_params_len = len(output_params)
-		content += "\t"*2 + "std::vector<std::string> cols;\n"
-		content += "\t"*2 + "cols.resize({0});\n".format(str(output_params_len))
-		content += "\t"*2 + "bool b = row->scan(cols);\n"
-		content += "\t"*2 + "if (!b) continue;\n"
+		content += "\t"*n + "std::vector<std::string> cols;\n"
+		content += "\t"*n + "cols.resize({0});\n".format(str(output_params_len))
+		content += "\t"*n + "bool b = row->scan(cols);\n"
+		content += "\t"*n + "if (!b) continue;\n"
 		if isarr is True:
-			content += "\t"*2 + "{0} tmp;\n".format(var_type)
-		content += "\t"*2 + "std::stringstream ss;\n"
+			content += "\t"*n + "{0} tmp;\n".format(var_type)
+		content += "\t"*n + "std::stringstream ss;\n"
 		tmp = "output{0}.".format(param_no)
 		if isarr is True:
 			tmp = "tmp."
@@ -205,16 +205,16 @@ class CWriteBase(object):
 			value = "cols[{0}]".format(i)
 			param_type = self.type_change(param_type)
 			if param_type != "std::string":
-				content += "\t"*2 + "{0} {1} = 0;\n".format(param_type, param_name)
-				content += "\t"*2 + "ss << cols[{0}];\n".format(i)
-				content += "\t"*2 + "ss >> {0};\n".format(param_name)
-				content += "\t"*2 + 'ss.clear();\n'
+				content += "\t"*n + "{0} {1} = 0;\n".format(param_type, param_name)
+				content += "\t"*n + "ss << cols[{0}];\n".format(i)
+				content += "\t"*n + "ss >> {0};\n".format(param_name)
+				content += "\t"*n + 'ss.clear();\n'
 				value = param_name
-			content += "\t"*2 + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
+			content += "\t"*n + "{0}set{1}({2});\n".format(tmp, CStringTools.upperFirstByte(param_name), value)
 			i += 1
 		if isarr is True:
 			# content += "\t"*1 + "}\n"
-			content += "\t"*2 + "output{0}.push_back(tmp);\n".format(param_no)
+			content += "\t"*n + "output{0}.push_back(tmp);\n".format(param_no)
 		return content
 
 	def __write_execute(self, func_name, method_info):
@@ -229,6 +229,7 @@ class CWriteBase(object):
 		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
 		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
 		content += "\t"*1 + 'bool result = false;\n'
+		content += "\t"*1 + 'std::string sql("");\n'
 		content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
 		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
@@ -240,8 +241,7 @@ class CWriteBase(object):
 			content += "\t"*1 + 'else {\n'
 			content += "\t"*2 + 'conn = reuseConn;\n'
 			content += "\t"*1 + '}\n'
-			content += "\t"*1 + 'std::string sql("");\n'
-			content += "\t"*n + "std::stringstream ss;\n"
+			content += "\t"*1 + "std::stringstream ss;\n"
 		else:
 			content += "\t"*1 + '}\n'
 		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
@@ -321,7 +321,7 @@ class CWriteBase(object):
 				content += "\t"*n + 'sql = ss.str();\n'
 				content += "\t"*n + 'ss.clear();\n'
 			else:
-				content += "\t"*1 + 'std::string sql = "{0}";\n'.format(sql)
+				content += "\t"*1 + 'sql = "{0}";\n'.format(sql)
 			if output_params is None:
 				content += "\t"*n + 'result = conn->exec(sql);\n'
 				if in_isarr == "true":
@@ -343,7 +343,7 @@ class CWriteBase(object):
 				isarr = False
 				if out_isarr == "true":
 					isarr = True
-				content += self.__read_data(func_name, output_params, isarr, method_info, 0)
+				content += self.__read_data(func_name, output_params, isarr, method_info, n+1, param_no)
 				content += "\t"*n + '}\n'
 				content += "\t"*n + 'row->close();\n'
 			if in_isarr == "true":
