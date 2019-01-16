@@ -154,22 +154,31 @@ class CWriteBase(object):
 	def write_method_define(self, method_info):
 		content = ""
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
+		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
+		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 		bref = method_info.get(CSqlParse.BREF)
 		if bref is not None:
 			content += "\t"*1 + "// " + bref + "\n"
 		c, _ = self.get_method_param_list(method_info, "", 0)
-		content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, c)
+		if input_params is not None and output_params is not None and (len(input_params) + len(output_params) == 0):
+			content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name)
+		else:
+			content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, c)
 		return content
 
 	def write_method_implement(self, method_info):
 		content = ""
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
+		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 		# if output_params is not None:
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
 		c, _ = self.get_method_param_list(method_info, "", 0)
-		content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, c)
+		if input_params is not None and output_params is not None and (len(input_params) + len(output_params) == 0):
+			content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name)
+		else:
+			content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, c)
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
