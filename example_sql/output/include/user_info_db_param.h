@@ -247,6 +247,44 @@ private:
 	bool userAgeUsed;
 };
 
+class CSubOutputTestInput
+{
+public:
+	explicit CSubOutputTestInput()
+		: userName("") {}
+	explicit CSubOutputTestInput(const std::string &userName)
+		: userName(userName) {}
+	virtual ~CSubOutputTestInput() {}
+
+public:
+	void setUserName(const std::string &userName, bool use = true) { this->userName = userName; this->userNameUsed = use; }
+	const std::string &getUserName() const { return this->userName; }
+	const bool &getUserNameUsed() const { return this->userNameUsed; }
+
+private:
+	std::string userName;
+	bool userNameUsed;
+};
+
+class CSubOutputTestOutput
+{
+public:
+	explicit CSubOutputTestOutput()
+		: userName("") {}
+	explicit CSubOutputTestOutput(const std::string &userName)
+		: userName(userName) {}
+	virtual ~CSubOutputTestOutput() {}
+
+public:
+	void setUserName(const std::string &userName, bool use = true) { this->userName = userName; this->userNameUsed = use; }
+	const std::string &getUserName() const { return this->userName; }
+	const bool &getUserNameUsed() const { return this->userNameUsed; }
+
+private:
+	std::string userName;
+	bool userNameUsed;
+};
+
 }
 
 #endif // __USER_INFO_DB_PARAM_H__

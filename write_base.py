@@ -160,7 +160,7 @@ class CWriteBase(object):
 		if bref is not None:
 			content += "\t"*1 + "// " + bref + "\n"
 		c, _ = self.get_method_param_list(method_info, "", 0)
-		if input_params is not None and output_params is not None and (len(input_params) + len(output_params) == 0):
+		if input_params is None and output_params is None:
 			content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name)
 		else:
 			content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, c)
@@ -175,7 +175,7 @@ class CWriteBase(object):
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
 		c, _ = self.get_method_param_list(method_info, "", 0)
-		if input_params is not None and output_params is not None and (len(input_params) + len(output_params) == 0):
+		if input_params is None and output_params is None:
 			content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name)
 		else:
 			content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, c)

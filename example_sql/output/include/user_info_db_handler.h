@@ -30,10 +30,14 @@ public:
 	uint32_t updateUsername2(const CUpdateUsername2Input &input0, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);
 	// 更新用户名3
 	uint32_t updateUsername3(const CUpdateUsername3Input &input0, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);
+	// 无参数测试
+	uint32_t noParamTest(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);
 	// 子句测试
 	uint32_t subTest(const CUpdateUsernameInput &input0, const CSubTestInput &input1, const std::list<CDeleteUserInput> &input2, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);
 	// 子句测试pro
 	uint32_t subTestPro(const CUpdateUsernameInput &input0, const CSubTestInput &input1, const std::list<CDeleteUserInput> &input2, const CSubTestProInput &input3, const std::list<CAddUserinfoInput> &input4, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);
+	// 子句输出测试
+	uint32_t subOutputTest(const std::list<CSubOutputTestInput> &input0, CSubOutputTestOutput &output0, std::list<CGetAllUserinfoOutput> &output1, const std::list<CAddUserinfoInput> &input2, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);
 
 public:
 	sql::IConnect *connect() { return m_connPool.connect(m_dial); }
