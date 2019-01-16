@@ -298,12 +298,12 @@ class CWriteBase(object):
 			if is_start_trans is True:
 				content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 				content += "\t"*2 + 'if (result) {\n'
-				content += "\t"*3 + 'trans->commit();\n'
-				content += "\t"*3 + 'return 0;\n'
+				content += "\t"*3 + 'result = trans->commit();\n'
+				# content += "\t"*3 + 'return 0;\n'
 				content += "\t"*2 + '}\n'
 				content += "\t"*2 + 'else {\n'
-				content += "\t"*3 + 'trans->rollback();\n'
-				content += "\t"*3 + 'return 1;\n'
+				content += "\t"*3 + 'result = trans->rollback();\n'
+				# content += "\t"*3 + 'return 1;\n'
 				content += "\t"*2 + '}\n'
 				content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
 				content += "\t"*1 + '}\n'
@@ -335,24 +335,28 @@ class CWriteBase(object):
 					content += "\t"*n + 'if (!result) break;\n'
 			else:
 				content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
-				content += "\t"*n + 'if (result == false) {\n'
-				content += "\t"*(n+1) + 'if (trans != nullptr) trans->rollback();\n'
-				content += "\t"*(n+1) + 'return -1;\n'
-				content += "\t"*n + '}\n'
-				content += "\t"*n + 'if (result == true && row == nullptr) {\n'
-				content += "\t"*(n+1) + 'if (trans != nullptr) trans->commit();\n'
-				content += "\t"*(n+1) + 'return 0;\n'
-				content += "\t"*n + '}\n'
+				content += "\t"*n + 'if (result == true) {\n'
+				# content += "\t"*n + 'if (result == false) {\n'
+				# content += "\t"*(n+1) + 'if (trans != nullptr) trans->rollback();\n'
+				# content += "\t"*(n+1) + 'm_connPool.freeConnect(conn);\n'
+				# content += "\t"*(n+1) + 'return -1;\n'
+				# content += "\t"*n + '}\n'
+				# content += "\t"*n + 'if (result == true && row == nullptr) {\n'
+				# content += "\t"*(n+1) + 'if (trans != nullptr) trans->commit();\n'
+				# content += "\t"*(n+1) + 'm_connPool.freeConnect(conn);\n'
+				# content += "\t"*(n+1) + 'return 0;\n'
+				# content += "\t"*n + '}\n'
 				var_type = self.get_output_class_name(func_name, method_info)
 				if out_isarr == "true":
-					content += "\t"*n + "output{0}.clear();\n".format(param_no)
-				content += "\t"*n + 'while (row->next()) {\n'
+					content += "\t"*(n+1) + "output{0}.clear();\n".format(param_no)
+				content += "\t"*(n+1) + 'while (row->next()) {\n'
 				isarr = False
 				if out_isarr == "true":
 					isarr = True
-				content += self.__read_data(func_name, output_params, isarr, method_info, n+1, param_no)
+				content += self.__read_data(func_name, output_params, isarr, method_info, n+2, param_no)
+				content += "\t"*(n+1) + '}\n'
+				content += "\t"*(n+1) + 'row->close();\n'
 				content += "\t"*n + '}\n'
-				content += "\t"*n + 'row->close();\n'
 			if in_isarr == "true":
 				content += "\t"*1 + "}\n"
 			content += judge_result()
