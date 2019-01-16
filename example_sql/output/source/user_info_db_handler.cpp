@@ -165,6 +165,8 @@ uint32_t CDbHandler::getAllUserinfo(std::list<CGetAllUserinfoOutput> &output0, b
 	if (!isAlreayStartTrans) {
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
+		trans = conn->begin();
+		if (trans == nullptr) return -1;
 	}
 	sql = "select * from user_info;";
 	sql::IRow *row = conn->query(sql, result);
@@ -396,6 +398,8 @@ uint32_t CDbHandler::noParamTest(bool isAlreayStartTrans /* = false */, sql::ICo
 	if (!isAlreayStartTrans) {
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
+		trans = conn->begin();
+		if (trans == nullptr) return -1;
 	}
 	sql = "select * from user_info;";
 	result = conn->exec(sql);

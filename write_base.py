@@ -242,17 +242,15 @@ class CWriteBase(object):
 		content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
 		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
+		if is_start_trans is True:
+			content += "\t"*2 + 'trans = conn->begin();\n'
+			content += "\t"*2 + 'if (trans == nullptr) return -1;\n'
+		content += "\t"*1 + '}\n'
 		if input_params is not None:
-			if is_start_trans is True:
-				content += "\t"*2 + 'trans = conn->begin();\n'
-				content += "\t"*2 + 'if (trans == nullptr) return -1;\n'
-			content += "\t"*1 + '}\n'
 			content += "\t"*1 + 'else {\n'
 			content += "\t"*2 + 'conn = reuseConn;\n'
 			content += "\t"*1 + '}\n'
 			content += "\t"*1 + "std::stringstream ss;\n"
-		else:
-			content += "\t"*1 + '}\n'
 		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
 		c, _ = self.__write_input(method_info, "", 0)
 		content += c
