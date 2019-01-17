@@ -326,7 +326,7 @@ class CWriteBase(object):
 				else:
 					content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n)
 				content += "\t"*n + 'sql = ss.str();\n'
-				content += "\t"*n + 'ss.clear();\n'
+				content += "\t"*n + 'ss.str("");\n'
 			else:
 				content += "\t"*1 + 'sql = "{0}";\n'.format(sql)
 			if output_params is None:
