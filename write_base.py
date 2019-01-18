@@ -52,11 +52,11 @@ class CWriteBase(object):
 	def get_method_param_list(self, method_info, method_param_list, param_no):
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
 		sub_func_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
+		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
+		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 		def inner(method_param_list, param_no):
 			input_name = self.get_input_class_name(func_name, method_info)
 			output_name = self.get_output_class_name(func_name, method_info)
-			input_params = method_info.get(CSqlParse.INPUT_PARAMS)
-			output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 			in_isarr = method_info.get(CSqlParse.IN_ISARR)
 			out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 			in_ismul = None
@@ -102,12 +102,12 @@ class CWriteBase(object):
 				i += 1
 				if func_name == sub_func_name:
 					method_param_list, param_no = inner(method_param_list, param_no)
-					if i < length:
+					if i < length and (input_params is not None and output_params is not None):
 						method_param_list += ", "
 					continue
 				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
 				method_param_list, param_no = self.get_method_param_list(method, method_param_list, param_no)
-				if i < length:
+				if i < length and (input_params is not None and output_params is not None):
 					method_param_list += ", "
 		return method_param_list, param_no
 
