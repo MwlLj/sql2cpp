@@ -244,7 +244,10 @@ class CWriteBase(object):
 		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
 		if is_start_trans is True:
 			content += "\t"*2 + 'trans = conn->begin();\n'
-			content += "\t"*2 + 'if (trans == nullptr) return -1;\n'
+			content += "\t"*2 + 'if (trans == nullptr) {\n'
+			content += "\t"*3 + 'm_connPool.freeConnect(conn);\n'
+			content += "\t"*3 + 'return -1;\n'
+			content += "\t"*2 + '}\n'
 		content += "\t"*1 + '}\n'
 		if input_params is not None:
 			content += "\t"*1 + 'else {\n'
