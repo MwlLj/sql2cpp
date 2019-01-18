@@ -301,11 +301,11 @@ class CWriteBase(object):
 			if is_start_trans is True:
 				content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 				content += "\t"*2 + 'if (result) {\n'
-				content += "\t"*3 + 'result = trans->commit();\n'
+				content += "\t"*3 + 'trans->commit();\n'
 				# content += "\t"*3 + 'return 0;\n'
 				content += "\t"*2 + '}\n'
 				content += "\t"*2 + 'else {\n'
-				content += "\t"*3 + 'result = trans->rollback();\n'
+				content += "\t"*3 + 'trans->rollback();\n'
 				# content += "\t"*3 + 'return 1;\n'
 				content += "\t"*2 + '}\n'
 				content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
