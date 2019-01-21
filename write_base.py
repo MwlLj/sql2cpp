@@ -338,7 +338,7 @@ class CWriteBase(object):
 					content += "\t"*n + 'if (!result) break;\n'
 			else:
 				content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
-				content += "\t"*n + 'if (result == true) {\n'
+				content += "\t"*n + 'if (result == true && row != nullptr) {\n'
 				# content += "\t"*n + 'if (result == false) {\n'
 				# content += "\t"*(n+1) + 'if (trans != nullptr) trans->rollback();\n'
 				# content += "\t"*(n+1) + 'm_connPool.freeConnect(conn);\n'
