@@ -102,12 +102,12 @@ class CWriteBase(object):
 				i += 1
 				if func_name == sub_func_name:
 					method_param_list, param_no = inner(method_param_list, param_no)
-					if i < length and (input_params is not None and output_params is not None):
+					if i < length and (input_params is not None or output_params is not None):
 						method_param_list += ", "
 					continue
 				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
 				method_param_list, param_no = self.get_method_param_list(method, method_param_list, param_no)
-				if i < length and (input_params is not None and output_params is not None):
+				if i < length and (input_params is not None or output_params is not None):
 					method_param_list += ", "
 		return method_param_list, param_no
 

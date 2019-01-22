@@ -52,7 +52,10 @@ uint32_t CDbHandler::addUserinfo(const std::list<CAddUserinfoInput> &input0, boo
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -62,16 +65,16 @@ uint32_t CDbHandler::addUserinfo(const std::list<CAddUserinfoInput> &input0, boo
 	{
 		ss << "insert into user_info values(null, " << "'" << iter->getUsername().c_str() << "'" << ", " << "'" << iter->getUserage() << "'" << ");";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		result = conn->exec(sql);
 		if (!result) break;
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -95,7 +98,10 @@ uint32_t CDbHandler::getUserinfoById(const CGetUserinfoByIdInput &input0, CGetUs
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -104,9 +110,9 @@ uint32_t CDbHandler::getUserinfoById(const CGetUserinfoByIdInput &input0, CGetUs
 	ss << "select * from user_info\
 		where id = " << "'" << input0.getId() << "'" << ";";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	sql::IRow *row = conn->query(sql, result);
-	if (result == true) {
+	if (result == true && row != nullptr) {
 		while (row->next()) {
 			std::vector<std::string> cols;
 			cols.resize(3);
@@ -129,10 +135,10 @@ uint32_t CDbHandler::getUserinfoById(const CGetUserinfoByIdInput &input0, CGetUs
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -156,11 +162,14 @@ uint32_t CDbHandler::getAllUserinfo(std::list<CGetAllUserinfoOutput> &output0, b
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	sql = "select * from user_info;";
 	sql::IRow *row = conn->query(sql, result);
-	if (result == true) {
+	if (result == true && row != nullptr) {
 		output0.clear();
 		while (row->next()) {
 			std::vector<std::string> cols;
@@ -186,10 +195,10 @@ uint32_t CDbHandler::getAllUserinfo(std::list<CGetAllUserinfoOutput> &output0, b
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -213,7 +222,10 @@ uint32_t CDbHandler::deleteUser(const std::list<CDeleteUserInput> &input0, bool 
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -223,16 +235,16 @@ uint32_t CDbHandler::deleteUser(const std::list<CDeleteUserInput> &input0, bool 
 	{
 		ss << "delete from user_info where id = " << "'" << iter->getId() << "'" << ";";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		result = conn->exec(sql);
 		if (!result) break;
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -256,7 +268,10 @@ uint32_t CDbHandler::updateUsername(const CUpdateUsernameInput &input0, bool isA
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -264,14 +279,14 @@ uint32_t CDbHandler::updateUsername(const CUpdateUsernameInput &input0, bool isA
 	std::stringstream ss;
 	ss << "update user_info set username = " << "'" << input0.getUsername().c_str() << "'" << " where id = " << "'" << input0.getId() << "'" << ";";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -295,7 +310,10 @@ uint32_t CDbHandler::updateUsername2(const CUpdateUsername2Input &input0, bool i
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -303,14 +321,14 @@ uint32_t CDbHandler::updateUsername2(const CUpdateUsername2Input &input0, bool i
 	std::stringstream ss;
 	ss << "update user_info set username = " << "'" << input0.getUsername().c_str() << "'" << " where id = " << "'" << input0.getId() << "'" << ";";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -334,7 +352,10 @@ uint32_t CDbHandler::updateUsername3(const CUpdateUsername3Input &input0, bool i
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -342,14 +363,14 @@ uint32_t CDbHandler::updateUsername3(const CUpdateUsername3Input &input0, bool i
 	std::stringstream ss;
 	ss << "update user_info set username = " << "'" << input0.getUsername().c_str() << "'" << " " << input0.getCondition().c_str() << ";";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -373,16 +394,19 @@ uint32_t CDbHandler::noParamTest(bool isAlreayStartTrans /* = false */, sql::ICo
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	sql = "select * from user_info;";
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -406,7 +430,10 @@ uint32_t CDbHandler::subTest(const CUpdateUsernameInput &input0, const CSubTestI
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -414,27 +441,27 @@ uint32_t CDbHandler::subTest(const CUpdateUsernameInput &input0, const CSubTestI
 	std::stringstream ss;
 	ss << "update user_info set username = " << "'" << input0.getUsername().c_str() << "'" << " where id = " << "'" << input0.getId() << "'" << ";";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
 	ss << "insert into user_info values(null, " << "'" << input1.getUserName().c_str() << "'" << ", " << "'" << input1.getUserAge() << "'" << ");";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -442,16 +469,16 @@ uint32_t CDbHandler::subTest(const CUpdateUsernameInput &input0, const CSubTestI
 	{
 		ss << "delete from user_info where id = " << "'" << iter->getId() << "'" << ";";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		result = conn->exec(sql);
 		if (!result) break;
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -475,7 +502,10 @@ uint32_t CDbHandler::subTestPro(const CUpdateUsernameInput &input0, const CSubTe
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -483,27 +513,27 @@ uint32_t CDbHandler::subTestPro(const CUpdateUsernameInput &input0, const CSubTe
 	std::stringstream ss;
 	ss << "update user_info set username = " << "'" << input0.getUsername().c_str() << "'" << " where id = " << "'" << input0.getId() << "'" << ";";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
 	ss << "insert into user_info values(null, " << "'" << input1.getUserName().c_str() << "'" << ", " << "'" << input1.getUserAge() << "'" << ");";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -511,29 +541,29 @@ uint32_t CDbHandler::subTestPro(const CUpdateUsernameInput &input0, const CSubTe
 	{
 		ss << "delete from user_info where id = " << "'" << iter->getId() << "'" << ";";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		result = conn->exec(sql);
 		if (!result) break;
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
 	ss << "insert into user_info values(null, " << "'" << input3.getUserName().c_str() << "'" << ", " << "'" << input3.getUserAge() << "'" << ");";
 	sql = ss.str();
-	ss.clear();
+	ss.str("");
 	result = conn->exec(sql);
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -541,16 +571,16 @@ uint32_t CDbHandler::subTestPro(const CUpdateUsernameInput &input0, const CSubTe
 	{
 		ss << "insert into user_info values(null, " << "'" << iter->getUsername().c_str() << "'" << ", " << "'" << iter->getUserage() << "'" << ");";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		result = conn->exec(sql);
 		if (!result) break;
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -574,7 +604,10 @@ uint32_t CDbHandler::subOutputTest(const std::list<CSubOutputTestInput> &input0,
 		conn = m_connPool.connect(m_dial);
 		if (conn == nullptr) return -1;
 		trans = conn->begin();
-		if (trans == nullptr) return -1;
+		if (trans == nullptr) {
+			m_connPool.freeConnect(conn);
+			return -1;
+		}
 	}
 	else {
 		conn = reuseConn;
@@ -585,9 +618,9 @@ uint32_t CDbHandler::subOutputTest(const std::list<CSubOutputTestInput> &input0,
 		ss << "update user_info set username = " << "'" << iter->getUserName().c_str() << "'" << ";\
 		select username from user_info;";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		sql::IRow *row = conn->query(sql, result);
-		if (result == true) {
+		if (result == true && row != nullptr) {
 			while (row->next()) {
 				std::vector<std::string> cols;
 				cols.resize(1);
@@ -601,16 +634,16 @@ uint32_t CDbHandler::subOutputTest(const std::list<CSubOutputTestInput> &input0,
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
 	sql = "select * from user_info;";
 	sql::IRow *row = conn->query(sql, result);
-	if (result == true) {
+	if (result == true && row != nullptr) {
 		output1.clear();
 		while (row->next()) {
 			std::vector<std::string> cols;
@@ -636,10 +669,10 @@ uint32_t CDbHandler::subOutputTest(const std::list<CSubOutputTestInput> &input0,
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
@@ -647,16 +680,16 @@ uint32_t CDbHandler::subOutputTest(const std::list<CSubOutputTestInput> &input0,
 	{
 		ss << "insert into user_info values(null, " << "'" << iter->getUsername().c_str() << "'" << ", " << "'" << iter->getUserage() << "'" << ");";
 		sql = ss.str();
-		ss.clear();
+		ss.str("");
 		result = conn->exec(sql);
 		if (!result) break;
 	}
 	if (!isAlreayStartTrans) {
 		if (result) {
-			result = trans->commit();
+			trans->commit();
 		}
 		else {
-			result = trans->rollback();
+			trans->rollback();
 		}
 		m_connPool.freeConnect(conn);
 	}
