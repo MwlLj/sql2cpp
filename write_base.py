@@ -171,6 +171,7 @@ class CWriteBase(object):
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
 		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
+		is_start_trans = method_info.get(CSqlParse.IS_START_TRANS)
 		# if output_params is not None:
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
@@ -181,6 +182,19 @@ class CWriteBase(object):
 			content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, c)
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
+		content += "\n"
+		if is_start_trans is True:
+			content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
+			content += "\t"*2 + 'if (result) {\n'
+			content += "\t"*3 + 'trans->commit();\n'
+			# content += "\t"*3 + 'return 0;\n'
+			content += "\t"*2 + '}\n'
+			content += "\t"*2 + 'else {\n'
+			content += "\t"*3 + 'trans->rollback();\n'
+			# content += "\t"*3 + 'return 1;\n'
+			content += "\t"*2 + '}\n'
+			content += "\t"*2 + 'm_connPool.freeConnect(conn);\n'
+			content += "\t"*1 + '}\n'
 		content += "\n"
 		content += "\t"*1 + "if (!result) {\n"
 		content += "\t"*2 + "ret = 1;\n"
@@ -362,7 +376,7 @@ class CWriteBase(object):
 				content += "\t"*n + '}\n'
 			if in_isarr == "true":
 				content += "\t"*1 + "}\n"
-			content += judge_result()
+			# content += judge_result()
 			param_no += 1
 			return content, param_no
 		if sub_func_list is None:
