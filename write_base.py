@@ -251,6 +251,7 @@ class CWriteBase(object):
 		content += "\t"*1 + 'uint32_t ret = 0;\n\n'
 		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
 		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
+		content += "\t"*1 + 'sql::IRow *row = nullptr;\n'
 		content += "\t"*1 + 'bool result = false;\n'
 		content += "\t"*1 + 'std::string sql("");\n'
 		content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
@@ -351,7 +352,7 @@ class CWriteBase(object):
 				if in_isarr == "true":
 					content += "\t"*n + 'if (!result) break;\n'
 			else:
-				content += "\t"*n + 'sql::IRow *row = conn->query(sql, result);\n'
+				content += "\t"*n + 'row = conn->query(sql, result);\n'
 				content += "\t"*n + 'if (result == true && row != nullptr) {\n'
 				# content += "\t"*n + 'if (result == false) {\n'
 				# content += "\t"*(n+1) + 'if (trans != nullptr) trans->rollback();\n'
