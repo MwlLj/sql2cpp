@@ -161,9 +161,9 @@ class CWriteBase(object):
 			content += "\t"*1 + "// " + bref + "\n"
 		c, _ = self.get_method_param_list(method_info, "", 0)
 		if input_params is None and output_params is None:
-			content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name)
+			content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name)
 		else:
-			content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr);\n".format(func_name, c)
+			content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name, c)
 		return content
 
 	def write_method_implement(self, method_info):
@@ -177,9 +177,9 @@ class CWriteBase(object):
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
 		c, _ = self.get_method_param_list(method_info, "", 0)
 		if input_params is None and output_params is None:
-			content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name)
+			content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name)
 		else:
-			content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/)\n".format(self.class_name(), func_name, c)
+			content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name, c)
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
@@ -344,6 +344,7 @@ class CWriteBase(object):
 				else:
 					content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n)
 				content += "\t"*n + 'sql = ss.str();\n'
+				content += "\t"*n + 'if (outSql != nullptr) *outSql = sql;\n'
 				content += "\t"*n + 'ss.str("");\n'
 			else:
 				content += "\t"*1 + 'sql = "{0}";\n'.format(sql)
