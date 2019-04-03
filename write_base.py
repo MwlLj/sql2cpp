@@ -366,8 +366,8 @@ class CWriteBase(object):
 				# content += "\t"*(n+1) + 'return 0;\n'
 				# content += "\t"*n + '}\n'
 				var_type = self.get_output_class_name(func_name, method_info)
-				if out_isarr == "true":
-					content += "\t"*(n+1) + "output{0}.clear();\n".format(param_no)
+				# if out_isarr == "true":
+				# 	content += "\t"*(n+1) + "output{0}.clear();\n".format(param_no)
 				content += "\t"*(n+1) + 'while (row->next()) {\n'
 				isarr = False
 				if out_isarr == "true":
