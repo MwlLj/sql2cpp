@@ -16,7 +16,15 @@ class CWriteParamClass(CWriteBase):
 		self.m_content = ""
 		self.m_namespace = ""
 		self.m_import_list = []
+		self.m_class_set = set()
 		self.__compare_file_path(file_path, root)
+
+	def __class_is_writed(self, class_name):
+		if class_name in self.m_class_set:
+			return True
+		else:
+			self.m_class_set.add(class_name)
+			return False
 
 	def __compare_file_path(self, file_path, root):
 		basename = os.path.basename(file_path)
@@ -82,6 +90,8 @@ class CWriteParamClass(CWriteBase):
 			class_name = self.get_input_class_name(func_name, method_info)
 		else:
 			class_name = self.get_output_class_name(func_name, method_info)
+		if self.__class_is_writed(class_name) is True:
+			return content
 		content += "class {0}\n".format(class_name)
 		content += "{\n"
 		content += "public:\n"
