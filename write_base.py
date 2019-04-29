@@ -108,7 +108,8 @@ class CWriteBase(object):
 				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
 				method_param_list, param_no = self.get_method_param_list(method, method_param_list, param_no)
 				if i < length and (input_params is not None or output_params is not None):
-					method_param_list += ", "
+					if (method.get(CSqlParse.INPUT_PARAMS) is not None and len(method.get(CSqlParse.INPUT_PARAMS)) > 0) or (method.get(CSqlParse.OUTPUT_PARAMS) is not None and len(method.get(CSqlParse.OUTPUT_PARAMS)) > 0):
+						method_param_list += ", "
 		return method_param_list, param_no
 
 	def __sub_func_index_change(self, sub_func_index):
@@ -163,7 +164,10 @@ class CWriteBase(object):
 		if input_params is None and output_params is None:
 			content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name)
 		else:
-			content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name, c)
+			if c == "":
+				content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name)
+			else:
+				content += "\t"*1 + "uint32_t {0}({1}, bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name, c)
 		return content
 
 	def write_method_implement(self, method_info):
@@ -179,7 +183,10 @@ class CWriteBase(object):
 		if input_params is None and output_params is None:
 			content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name)
 		else:
-			content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name, c)
+			if c == "":
+				content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name)
+			else:
+				content += "uint32_t {0}::{1}({2}, bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name, c)
 		content += "{\n"
 		content += self.__write_execute(func_name, method_info)
 		content += "\n"
@@ -435,7 +442,7 @@ class CWriteBase(object):
 					sql_tmp = sql_tmp.replace(group_field, "")
 				else:
 					t_f = "true"
-				this_field = "input."
+				this_field = "input{0}.".format(param_no)
 				if in_isarr == "true":
 					this_field = "iter->"
 				content += "{0}get{1}Used() == {2}".format(this_field, CStringTools.upperFirstByte(group_input_params[i - 1].get(CSqlParse.PARAM_NAME)), t_f)
@@ -497,7 +504,7 @@ class CWriteBase(object):
 		content = ""
 		length = len(input_params)
 		i = 0
-		preix = "input.".format(param_no)
+		preix = "input{0}.".format(param_no)
 		if in_isarr == "true":
 			preix = "iter->"
 		for param in input_params:
