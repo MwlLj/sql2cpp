@@ -157,11 +157,12 @@ class CWriteBase(object):
 		func_name = method_info.get(CSqlParse.FUNC_NAME)
 		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
+		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
 		bref = method_info.get(CSqlParse.BREF)
 		if bref is not None:
 			content += "\t"*1 + "// " + bref + "\n"
 		c, _ = self.get_method_param_list(method_info, "", 0)
-		if input_params is None and output_params is None:
+		if input_params is None and output_params is None and sub_func_sort_list is None:
 			content += "\t"*1 + "uint32_t {0}(bool isAlreayStartTrans = false, sql::IConnect *reuseConn = nullptr, std::string *outSql = nullptr);\n".format(func_name)
 		else:
 			if c == "":
@@ -176,11 +177,12 @@ class CWriteBase(object):
 		input_params = method_info.get(CSqlParse.INPUT_PARAMS)
 		output_params = method_info.get(CSqlParse.OUTPUT_PARAMS)
 		is_start_trans = method_info.get(CSqlParse.IS_START_TRANS)
+		sub_func_sort_list = method_info.get(CSqlParse.SUB_FUNC_SORT_LIST)
 		# if output_params is not None:
 		# 	out_isarr = method_info.get(CSqlParse.OUT_ISARR)
 		# 	content += self.__write_callback(func_name, out_isarr, output_params)
 		c, _ = self.get_method_param_list(method_info, "", 0)
-		if input_params is None and output_params is None:
+		if input_params is None and output_params is None and sub_func_sort_list is None:
 			content += "uint32_t {0}::{1}(bool isAlreayStartTrans /* = false */, sql::IConnect *reuseConn /* = nullptr*/, std::string *outSql /* = nullptr*/)\n".format(self.class_name(), func_name)
 		else:
 			if c == "":
