@@ -73,6 +73,7 @@ class CWriteSqliteImpCpp(CWriteBase):
 			for create_sql in create_table_list:
 				content += "\t"*2 + 'sql = "\\\n{0}";\n'.format(create_sql)
 				content += "\t"*2 + "conn->exec(sql);\n"
+				content += "\t"*2 + "conn->compare(sql);\n"
 			content += "\t"*1 + "}\n"
 		content += "\t"*1 + "m_connPool.freeConnect(conn);\n"
 		content += "}\n"
