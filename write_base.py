@@ -558,13 +558,19 @@ class CWriteBase(object):
 		content += "\t"*n + 'std::string {0}("");\n'.format(padding_var)
 		for param in input_params:
 			param_name = param.get(CSqlParse.PARAM_NAME)
-			param_type = self.type_change(param.get(CSqlParse.PARAM_TYPE))
+			pt = param.get(CSqlParse.PARAM_TYPE)
+			param_type = self.type_change(pt)
 			param_condition = param.get(CSqlParse.PARAM_CONDITION)
 			if param_condition is not None:
 				preix = "input{0}.".format(param_no)
 				if in_isarr == "true":
 					preix = "iter->"
-				param_condition = param_condition.replace("{}", '").append({0}get{1}()).append("'.format(preix, CStringTools.upperFirstByte(param_name)))
+				str_prefix = ""
+				str_suffix = ""
+				if pt != "string":
+					str_prefix = "std::to_string("
+					str_suffix = ")"
+				param_condition = param_condition.replace("{}", '").append({2}{0}get{1}(){3}).append("'.format(preix, CStringTools.upperFirstByte(param_name), str_prefix, str_suffix))
 				content += "\t"*n + 'if ({0}get{1}Used()) {2}.append("{3}");\n'.format(preix, CStringTools.upperFirstByte(param_name), padding_var, param_condition)
 		content += "\t"*n + self.__get_input_set_posture_single(func_name, method_info, in_isarr, input_params, param_no, padding, padding_var)
 		return content
