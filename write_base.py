@@ -261,7 +261,7 @@ class CWriteBase(object):
 		content += "\t"*1 + 'sql::IConnect *conn = nullptr;\n'
 		content += "\t"*1 + 'sql::ITransaction *trans = nullptr;\n'
 		content += "\t"*1 + 'sql::IRow *row = nullptr;\n'
-		content += "\t"*1 + 'bool result = false;\n'
+		content += "\t"*1 + 'bool result = true;\n'
 		content += "\t"*1 + 'std::string sql("");\n'
 		content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
@@ -345,10 +345,13 @@ class CWriteBase(object):
 					content += "\t"*1 + "for (auto iter = input{0}.begin(); iter != input{0}.end(); ++iter)\n".format(param_no)
 					content += "\t"*1 + "{\n"
 				if is_group is None or is_group is False:
+					is_exist_padding = method_info.get(CSqlParse.PARAM_IS_EXIST_PADDING)
+					if is_exist_padding is not None and is_exist_padding[0] is True:
+						content += self.__join_padding_str(n, func_name, method_info, input_params, in_isarr, param_no, is_exist_padding[1])
 					if is_brace is False:
 						content += "\t"*n + self.__replace_sql_by_input_params(input_params, in_isarr, sql, param_no, False)
 					else:
-						sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, param_no, False)
+						sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, param_no, False, is_exist_padding)
 						content += '\t'*n + 'ss << "' + sql
 				else:
 					content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n)
@@ -502,6 +505,16 @@ class CWriteBase(object):
 			content += ".c_str()"
 		return content
 
+	def __get_input_set_posture_single(self, func_name, method_info, in_isarr, input_params, param_no, padding, set_content):
+		content = ""
+		preix = "input{0}".format(param_no)
+		preix2 = "."
+		if in_isarr == "true":
+			preix = "iter"
+			preix2 = "->"
+		content += "const_cast<{4}&>({0}){1}set{2}({3});\n".format(preix, preix2, CStringTools.upperFirstByte(padding), set_content, self.get_input_class_name(func_name, method_info))
+		return content
+
 	def __get_input_posture(self, in_isarr, input_params, param_no):
 		content = ""
 		length = len(input_params)
@@ -539,30 +552,50 @@ class CWriteBase(object):
 				content += ", "
 		return content
 
-	def __replace_sql_brace(self, input_params, in_isarr, sql, param_no, is_group):
+	def __join_padding_str(self, n, func_name, method_info, input_params, in_isarr, param_no, padding):
+		content = ""
+		padding_var = "padding"
+		content += "\t"*n + 'std::string {0}("");\n'.format(padding_var)
+		for param in input_params:
+			param_name = param.get(CSqlParse.PARAM_NAME)
+			param_type = self.type_change(param.get(CSqlParse.PARAM_TYPE))
+			param_condition = param.get(CSqlParse.PARAM_CONDITION)
+			if param_condition is not None:
+				preix = "input{0}.".format(param_no)
+				if in_isarr == "true":
+					preix = "iter->"
+				param_condition = param_condition.replace("{}", '").append({0}get{1}()).append("'.format(preix, CStringTools.upperFirstByte(param_name)))
+				content += "\t"*n + 'if ({0}get{1}Used()) {2}.append("{3}");\n'.format(preix, CStringTools.upperFirstByte(param_name), padding_var, param_condition)
+		content += "\t"*n + self.__get_input_set_posture_single(func_name, method_info, in_isarr, input_params, param_no, padding, padding_var)
+		return content
+
+	def __replace_sql_brace(self, input_params, in_isarr, sql, param_no, is_group, is_exist_padding):
 		fulls, max_number = CStringTools.get_brace_format_list2(sql)
 		param_len = len(input_params)
 		full_set = set(fulls)
 		full_len = len(full_set)
 		if is_group is False:
-			if param_len != full_len:
-				str_tmp = "[Param Length Error] may be last #define error ? fulllen length({1}) != params length({2})\n[sql] : \t{0}".format(sql, full_len, param_len)
-				raise SystemExit(str_tmp)
-			if param_len < max_number + 1:
-				str_tmp = "[Param Match Error] may be last #define error ? input param length == {1}, max index == {2}\n[sql] : \t{0}".format(sql, param_len, max_number)
-				raise SystemExit(str_tmp)
+			if is_exist_padding is not None and is_exist_padding[0] is True:
+				pass
+			else:
+				if param_len != full_len:
+					str_tmp = "[Param Length Error] may be last #define error ? fulllen length({1}) != params length({2})\n[sql] : \t{0}".format(sql, full_len, param_len)
+					raise SystemExit(str_tmp)
+				if param_len < max_number + 1:
+					str_tmp = "[Param Match Error] may be last #define error ? input param length == {1}, max index == {2}\n[sql] : \t{0}".format(sql, param_len, max_number)
+					raise SystemExit(str_tmp)
 		for number, keyword, last_is_other, next_is_other in list(full_set):
 			inpams = input_params[number]
 			tmp = ""
 			if last_is_other is True:
 				tmp += '"'
-			if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
+			if (inpams.get(CSqlParse.PARAM_IS_CONDITION) is False) and (inpams.get(CSqlParse.PARAM_IS_PADDING) is False):
 				tmp += """ << "'" << """
 			else:
 				tmp += " << "
 			value = self.__get_input_posture_single(in_isarr, inpams, param_no)
 			tmp += value
-			if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
+			if (inpams.get(CSqlParse.PARAM_IS_CONDITION) is False) and (inpams.get(CSqlParse.PARAM_IS_PADDING) is False):
 				tmp += """ << "'" << """
 			else:
 				tmp += " << "
@@ -590,12 +623,12 @@ class CWriteBase(object):
 					last_isnot_symbol = False
 				inpams = input_params[i]
 				value = self.__get_input_posture_single(in_isarr, inpams, param_no)
-				if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
+				if (inpams.get(CSqlParse.PARAM_IS_CONDITION) is False) and (inpams.get(CSqlParse.PARAM_IS_PADDING) is False):
 					content += ' << "\\"" << '
 				else:
 					content += " << "
 				content += '{0}'.format(value)
-				if inpams.get(CSqlParse.PARAM_IS_CONDITION) is False:
+				if (inpams.get(CSqlParse.PARAM_IS_CONDITION) is False) and (inpams.get(CSqlParse.PARAM_IS_PADDING) is False):
 					content += ' << "\\"" << '
 				else:
 					content += " << "
