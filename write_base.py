@@ -687,6 +687,8 @@ class CWriteBase(object):
 			param_type = param.get(CSqlParse.PARAM_TYPE)
 			param_name = param.get(CSqlParse.PARAM_NAME)
 			content += self.write_init_param(param_type, param_name, is_default)
+			content += ", "
+			content += self.write_init_param("bool", "{0}Used".format(param_name), True)
 			if i < length:
 				content += ", "
 		return content
