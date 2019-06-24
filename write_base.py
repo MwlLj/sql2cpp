@@ -342,31 +342,31 @@ class CWriteBase(object):
 			sql = re.sub(r"\n", "\n\t\t", sql)
 			if input_params is not None:
 				if in_isarr == "true":
-					content += "\t"*1 + "for (auto iter = input{0}.begin(); iter != input{0}.end(); ++iter)\n".format(param_no)
-					content += "\t"*1 + "{\n"
+					content += "\t"*2 + "for (auto iter = input{0}.begin(); iter != input{0}.end(); ++iter)\n".format(param_no)
+					content += "\t"*2 + "{\n"
 				if is_group is None or is_group is False:
 					is_exist_padding = method_info.get(CSqlParse.PARAM_IS_EXIST_PADDING)
 					if is_exist_padding is not None and is_exist_padding[0] is True:
-						content += self.__join_padding_str(n, func_name, method_info, input_params, in_isarr, param_no, is_exist_padding[1])
+						content += self.__join_padding_str(n+1, func_name, method_info, input_params, in_isarr, param_no, is_exist_padding[1])
 					if is_brace is False:
-						content += "\t"*n + self.__replace_sql_by_input_params(input_params, in_isarr, sql, param_no, False)
+						content += "\t"*(n+1) + self.__replace_sql_by_input_params(input_params, in_isarr, sql, param_no, False)
 					else:
 						sql, fulls = self.__replace_sql_brace(input_params, in_isarr, sql, param_no, False, is_exist_padding)
-						content += '\t'*n + 'ss << "' + sql
+						content += '\t'*(n+1) + 'ss << "' + sql
 				else:
 					content += self.__write_group(func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n)
-				content += "\t"*n + 'sql = ss.str();\n'
-				content += "\t"*n + 'if (outSql != nullptr) *outSql = sql;\n'
-				content += "\t"*n + 'ss.str("");\n'
+				content += "\t"*(n+1) + 'sql = ss.str();\n'
+				content += "\t"*(n+1) + 'if (outSql != nullptr) *outSql = sql;\n'
+				content += "\t"*(n+1) + 'ss.str("");\n'
 			else:
 				content += "\t"*1 + 'sql = "{0}";\n'.format(sql)
 			if output_params is None:
-				content += "\t"*n + 'result = conn->exec(sql);\n'
+				content += "\t"*(n+1) + 'result = conn->exec(sql);\n'
 				if in_isarr == "true":
-					content += "\t"*n + 'if (!result) break;\n'
+					content += "\t"*(n+1) + 'if (!result) break;\n'
 			else:
-				content += "\t"*n + 'row = conn->query(sql, result);\n'
-				content += "\t"*n + 'if (result == true && row != nullptr) {\n'
+				content += "\t"*(n+1) + 'row = conn->query(sql, result);\n'
+				content += "\t"*(n+1) + 'if (result == true && row != nullptr) {\n'
 				# content += "\t"*n + 'if (result == false) {\n'
 				# content += "\t"*(n+1) + 'if (trans != nullptr) trans->rollback();\n'
 				# content += "\t"*(n+1) + 'm_connPool.freeConnect(conn);\n'
@@ -380,28 +380,32 @@ class CWriteBase(object):
 				var_type = self.get_output_class_name(func_name, method_info)
 				# if out_isarr == "true":
 				# 	content += "\t"*(n+1) + "output{0}.clear();\n".format(param_no)
-				content += "\t"*(n+1) + 'while (row->next()) {\n'
+				content += "\t"*(n+2) + 'while (row->next()) {\n'
 				isarr = False
 				if out_isarr == "true":
 					isarr = True
-				content += self.__read_data(func_name, output_params, isarr, method_info, n+2, param_no)
+				content += self.__read_data(func_name, output_params, isarr, method_info, n+3, param_no)
+				content += "\t"*(n+2) + '}\n'
+				content += "\t"*(n+2) + 'row->close();\n'
 				content += "\t"*(n+1) + '}\n'
-				content += "\t"*(n+1) + 'row->close();\n'
-				content += "\t"*n + '}\n'
 			if in_isarr == "true":
-				content += "\t"*1 + "}\n"
+				content += "\t"*2 + "}\n"
 			# content += judge_result()
 			param_no += 1
 			return content, param_no
 		if sub_func_list is None:
 			content, param_no = inner(content, param_no)
 		else:
+			content += "\t"*1 + 'do {\n'
 			for sub_func_name, sub_func_index in sub_func_list:
 				if func_name == sub_func_name:
 					content, param_no = inner(content, param_no)
+					content += "\t"*(n+1) + 'if (!result) break;\n'
 					continue
 				method = self.m_parser.get_methodinfo_by_methodname(sub_func_name)
 				content, param_no = self.__write_input(method, content, param_no)
+				content += "\t"*(n+1) + 'if (!result) break;\n'
+			content += "\t"*1 + '} while (0);\n'
 		return content, param_no
 
 	def __write_group(self, func_name, method_info, in_isarr, is_brace, input_params, sql, param_no, n):
