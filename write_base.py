@@ -510,8 +510,8 @@ class CWriteBase(object):
 		preix = "input{0}".format(param_no)
 		preix2 = "."
 		if in_isarr == "true":
-			preix = "iter"
-			preix2 = "->"
+			preix = "*iter"
+			preix2 = "."
 		content += "const_cast<{4}&>({0}){1}set{2}({3});\n".format(preix, preix2, CStringTools.upperFirstByte(padding), set_content, self.get_input_class_name(func_name, method_info))
 		return content
 
