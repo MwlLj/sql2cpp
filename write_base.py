@@ -263,6 +263,7 @@ class CWriteBase(object):
 		content += "\t"*1 + 'sql::IRow *row = nullptr;\n'
 		content += "\t"*1 + 'bool result = true;\n'
 		content += "\t"*1 + 'std::string sql("");\n'
+		content += "\t"*1 + 'std::string padding("");\n'
 		content += "\t"*1 + 'if (!isAlreayStartTrans) {\n'
 		content += "\t"*2 + 'conn = m_connPool.connect(m_dial);\n'
 		content += "\t"*2 + 'if (conn == nullptr) return -1;\n'
@@ -559,7 +560,7 @@ class CWriteBase(object):
 	def __join_padding_str(self, n, func_name, method_info, input_params, in_isarr, param_no, padding):
 		content = ""
 		padding_var = "padding"
-		content += "\t"*n + 'std::string {0}("");\n'.format(padding_var)
+		content += "\t"*n + '{0}.clear();\n'.format(padding_var)
 		for param in input_params:
 			param_name = param.get(CSqlParse.PARAM_NAME)
 			pt = param.get(CSqlParse.PARAM_TYPE)
